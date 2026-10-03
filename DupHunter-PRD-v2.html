@@ -1,0 +1,1450 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>DupHunter PRD · 重复文件查找与清理工具产品需求文档</title>
+<style>
+:root{
+  --bg:#0f1115; --panel:#161a21; --panel2:#1b2029; --line:#262c37;
+  --text:#dfe4ec; --muted:#9aa4b4; --accent:#5eb3ff; --accent2:#7ee787;
+  --warn:#ffb86b; --danger:#ff7b72;
+}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--text);
+  font-family:-apple-system,BlinkMacSystemFont,"PingFang SC","Microsoft YaHei","Segoe UI",Roboto,sans-serif;
+  font-size:15px;line-height:1.75;-webkit-font-smoothing:antialiased}
+.wrap{max-width:1080px;margin:0 auto;padding:56px 32px 120px}
+h1{font-size:32px;line-height:1.3;margin:0 0 8px;letter-spacing:-.5px}
+h2{font-size:23px;margin:56px 0 16px;padding-bottom:10px;border-bottom:1px solid var(--line);
+   scroll-margin-top:24px}
+h3{font-size:18px;margin:34px 0 10px;color:#eaf0f8}
+h4{font-size:16px;margin:22px 0 8px;color:#cdd7e4}
+p{margin:10px 0}
+a{color:var(--accent);text-decoration:none}
+code{background:var(--panel2);border:1px solid var(--line);border-radius:5px;
+  padding:1px 6px;font-size:13px;font-family:ui-monospace,SFMono-Regular,Menlo,monospace;color:#ffd580}
+pre{background:var(--panel);border:1px solid var(--line);border-radius:10px;padding:16px 18px;
+  overflow-x:auto;line-height:1.6}
+pre code{background:none;border:none;padding:0;color:var(--accent2);font-size:12.5px}
+blockquote{margin:16px 0;padding:10px 18px;border-left:3px solid var(--accent);
+  background:var(--panel);border-radius:0 8px 8px 0;color:var(--muted)}
+blockquote p{margin:4px 0}
+table{border-collapse:collapse;width:100%;margin:16px 0;font-size:13.5px;display:block;
+  overflow-x:auto;white-space:nowrap}
+th,td{border:1px solid var(--line);padding:9px 12px;text-align:left;vertical-align:top}
+th{background:var(--panel2);color:#eaf0f8;font-weight:600;white-space:nowrap}
+tr:nth-child(even) td{background:rgba(255,255,255,.015)}
+hr{border:none;border-top:1px solid var(--line);margin:40px 0}
+ul,ol{padding-left:24px}
+li{margin:5px 0}
+h1+p{margin-top:0}
+h1 code{font-size:28px;background:none;border:none;color:inherit;padding:0}
+@media(max-width:720px){.wrap{padding:32px 16px 80px}h1{font-size:25px}h2{font-size:20px}}
+</style>
+</head>
+<body><div class="wrap">
+<h1 id="duphunter-prd">DupHunter 重复文件查找与清理工具 · 产品需求文档（PRD）</h1>
+<p>产品代号 <strong>DupHunter</strong>，中文名：去重猎手
+文档版本 v2（去 AI 味改写版）｜ 创建日期 2026-10-03 ｜ 状态：待评审</p>
+<hr />
+<h2 id="0">0. 文档信息</h2>
+<table>
+<thead>
+<tr>
+<th>项目</th>
+<th>内容</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>文档名称</td>
+<td>DupHunter 产品需求文档（PRD）</td>
+</tr>
+<tr>
+<td>文档版本</td>
+<td>v2.0（初稿 v1.0，本版为去 AI 味重写）</td>
+</tr>
+<tr>
+<td>创建日期</td>
+<td>2026-10-03</td>
+</tr>
+<tr>
+<td>产品形态</td>
+<td>桌面端应用（Windows / macOS / Linux）+ 命令行工具</td>
+</tr>
+<tr>
+<td>文档状态</td>
+<td>待评审（产品、研发、测试、设计会签）</td>
+</tr>
+<tr>
+<td>目标版本</td>
+<td>v1.0 首个正式版</td>
+</tr>
+<tr>
+<td>相关方</td>
+<td>产品 / 桌面端研发 / 算法工程 / 测试 / 交互设计</td>
+</tr>
+</tbody>
+</table>
+<p>修订记录</p>
+<table>
+<thead>
+<tr>
+<th>版本</th>
+<th>日期</th>
+<th>说明</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>v1.0</td>
+<td>2026-10-03</td>
+<td>初稿，涵盖核心基础功能与特色高阶功能</td>
+</tr>
+<tr>
+<td>v2.0</td>
+<td>2026-10-03</td>
+<td>同一份需求，散文与措辞改写，结构与需求条目未删减</td>
+</tr>
+</tbody>
+</table>
+<hr />
+<h2 id="1">1. 背景与问题</h2>
+<h3 id="11">1.1 业务背景</h3>
+<p>个人和中小团队的数字资产涨得比硬盘快。摄影 RAW 加 JPEG 双份备份、视频工程的代理文件和缓存、下载目录堆积、系统镜像和虚拟机快照、NAS 上一年几次的全量备份、iCloud 和 OneDrive 的同步目录，同一份内容往往在盘上共存三五份甚至十份，几十 GB 就这么没了。</p>
+<p>文件系统帮不上忙。它只认文件名和路径，<code>IMG_0001.CR2</code> 和 <code>备份/DSC_9123.cr2</code> 在它眼里毫无关系，人眼也比对不出。</p>
+<p>市面上能查重的工具不少，问题集中在三处。</p>
+<ul>
+<li>只认文件名或大小的，改个名就找不回；认得全的又容易把"同一张照片的两个版本"算成两个，白忙一场。</li>
+<li>更麻烦的是删错。Lightroom 目录里的照片被删，下次打开整个目录红掉；Premiere 序列少一个源文件，导出的活儿卡在那儿。</li>
+<li>百万文件的盘扫一次要几小时，多数人扫到一半就关掉了。</li>
+</ul>
+<h3 id="12">1.2 痛点与对策</h3>
+<table>
+<thead>
+<tr>
+<th>编号</th>
+<th>痛点</th>
+<th>本产品对策</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>P-1</td>
+<td>找不全。改过名、挪过位置、打包过的相同内容认不出来</td>
+<td>内容哈希 + 感知哈希 + 压缩包内检索</td>
+</tr>
+<tr>
+<td>P-2</td>
+<td>不敢删。删完工程打不开、照片库报错</td>
+<td>引用完整性检查 + 回收站或链接替换 + 撤销窗口</td>
+</tr>
+<tr>
+<td>P-3</td>
+<td>太慢。全盘几小时，改一个文件就得重扫</td>
+<td>增量缓存 + 多线程 + 内存映射</td>
+</tr>
+<tr>
+<td>P-4</td>
+<td>不会选。一堆重复文件，不知道留哪份</td>
+<td>智能选择助手，规则化自动标记，一键反向选择</td>
+</tr>
+<tr>
+<td>P-5</td>
+<td>看不清。只看到两个文件名，没法确认是不是真的一样</td>
+<td>缩略图、文本差异、波形、关键帧预览</td>
+</tr>
+<tr>
+<td>P-6</td>
+<td>不能自动化。NAS 上只能点鼠标一个个删</td>
+<td>CLI、会话文件、报告导出，能挂定时任务</td>
+</tr>
+</tbody>
+</table>
+<h3 id="13-v10-6">1.3 目标（v1.0 起 6 个月）</h3>
+<table>
+<thead>
+<tr>
+<th>指标</th>
+<th>目标</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>首次扫描性能</td>
+<td>百万文件全量扫描 10 分钟内跑完（NVMe 盘）</td>
+</tr>
+<tr>
+<td>增量扫描</td>
+<td>二次扫描 1 分钟内出结果</td>
+</tr>
+<tr>
+<td>误删事故</td>
+<td>0 起。凡触发引用保护或走回收站的，必须能回滚</td>
+</tr>
+<tr>
+<td>留存</td>
+<td>完成一次有效清理的用户，30 日留存 40% 以上</td>
+</tr>
+</tbody>
+</table>
+<hr />
+<h2 id="2">2. 产品定位</h2>
+<h3 id="21">2.1 一句话</h3>
+<p>一套跑在本地、主打"绝不误删"的重复文件查找与清理工具。</p>
+<h3 id="22">2.2 三个目标</h3>
+<table>
+<thead>
+<tr>
+<th>目标</th>
+<th>定义</th>
+<th>怎么验收</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>查得全</td>
+<td>从字节完全一致到"看着像同一张照片"都能认</td>
+<td>精确哈希、模糊哈希、压缩包内、媒体感知四类匹配都支持</td>
+</tr>
+<tr>
+<td>认得准</td>
+<td>相似度可调，能预览能复核，误报率可控</td>
+<td>图片阈值区间 0 到 100，默认 90，人工复核入口常驻</td>
+</tr>
+<tr>
+<td>删得稳</td>
+<td>任何删除可回滚，不破坏外部引用</td>
+<td>默认走回收站或隔离区，受引用文件禁用永久删除</td>
+</tr>
+</tbody>
+</table>
+<h3 id="23">2.3 明确不做</h3>
+<ul>
+<li>不做云盘网盘在线搜索，那活儿归 OneDrive 和 iCloud 客户端。</li>
+<li>不做杀毒、不扫恶意软件。</li>
+<li>不做文件恢复，数据恢复交给专业工具。</li>
+<li>v2 之前不做跨设备同步和多人协作。</li>
+<li>不做在线 OCR 比对。所有计算在本地完成，不上传路径，不上传内容。</li>
+</ul>
+<hr />
+<h2 id="3">3. 用户与场景</h2>
+<h3 id="31">3.1 画像</h3>
+<table>
+<thead>
+<tr>
+<th>编号</th>
+<th>角色</th>
+<th>特征</th>
+<th>要什么</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>U-1</td>
+<td>摄影师</td>
+<td>数万张 RAW 加 JPEG，挂着 Lightroom 目录</td>
+<td>RAW 与 JPEG 配对识别、按"保留 RAW"筛选</td>
+</tr>
+<tr>
+<td>U-2</td>
+<td>视频和内容创作者</td>
+<td>4K 素材、工程缓存、代理文件</td>
+<td>大文件低内存处理、关键帧预览、工程引用保护</td>
+</tr>
+<tr>
+<td>U-3</td>
+<td>普通办公和家庭用户</td>
+<td>下载目录、微信QQ 接收文件夹、一堆文档副本</td>
+<td>简单好用、删除安全、能看图能对比</td>
+</tr>
+<tr>
+<td>U-4</td>
+<td>IT 运维和 NAS 管理员</td>
+<td>服务器、群晖威联通、定时任务</td>
+<td>CLI、报告导出、接进 CI/CD</td>
+</tr>
+</tbody>
+</table>
+<h3 id="32">3.2 场景</h3>
+<table>
+<thead>
+<tr>
+<th>场景</th>
+<th>操作路径</th>
+<th>用到的需求</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>S-1 摄影素材整理</td>
+<td>扫 <code>~/Pictures</code>，开感知哈希（阈值 95），助手保留"RAW 加分辨率最高的 JPG"，其余移到隔离区，人工复核后清空</td>
+<td>FR-02/03/06/07/10</td>
+</tr>
+<tr>
+<td>S-2 清理下载目录</td>
+<td>扫 <code>~/Downloads</code> 和 <code>~/Documents</code>，规则选"保留最新修改的"，确认后送回收站</td>
+<td>FR-01/04/06</td>
+</tr>
+<tr>
+<td>S-3 NAS 定时清理</td>
+<td>晚上 cron 跑 <code>dup hunter scan --path /volume1/backup --min-age 180d --report csv</code>，早上看邮件</td>
+<td>FR-09</td>
+</tr>
+<tr>
+<td>S-4 保护工程源文件</td>
+<td>扫工程目录，系统自动把被 <code>.cat</code> <code>.prproj</code> <code>.itl</code> 引用的文件标成"受保护"并置灰</td>
+<td>FR-07</td>
+</tr>
+<tr>
+<td>S-5 云同步目录瘦身</td>
+<td>扫 iCloud 和 OneDrive，跳过 <code>.ds_store</code> 这类元数据，删掉云端已同步的旧副本</td>
+<td>FR-01/04</td>
+</tr>
+</tbody>
+</table>
+<hr />
+<h2 id="4">4. 竞品与我们的做法</h2>
+<table>
+<thead>
+<tr>
+<th>竞品</th>
+<th>优势</th>
+<th>短板</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>dupeGuru</td>
+<td>开源、跨平台、有图片和音乐专用模式</td>
+<td>增量扫描弱，界面老，没有引用保护</td>
+</tr>
+<tr>
+<td>fclones / jdupes</td>
+<td>CLI 跑得快，支持硬链接删除</td>
+<td>没有预览，没有引用保护，面向极客</td>
+</tr>
+<tr>
+<td>VisualDUP / Photo Double</td>
+<td>图片视觉相似做得不错</td>
+<td>只管图片，Windows 为主，价格高</td>
+</tr>
+</tbody>
+</table>
+<p>我们的做法：把"引用完整性检查"和"可撤销的删除"做成信任上的优势，把"增量扫描加感知哈希"做成体验上的优势。</p>
+<hr />
+<h2 id="5">5. 架构与流程</h2>
+<h3 id="51">5.1 分层</h3>
+<pre><code>┌────────────────────────────────────────────────────────────┐
+│  表现层 UI（Tauri / Electron 容器）                          │
+│  扫描配置面板 · 结果列表 · 对比预览窗 · 规则编辑器 · 报告     │
+├────────────────────────────────────────────────────────────┤
+│  自动化层  CLI / 会话文件(.dhsess) / 报告导出                │
+├────────────────────────────────────────────────────────────┤
+│  业务层                                                      │
+│  智能选择助手(规则引擎) │ 引用完整性检查 │ 安全删除策略       │
+├────────────────────────────────────────────────────────────┤
+│  引擎层                                                      │
+│  扫描调度(多线+异步IO) │ 指纹计算 │ 匹配聚类 │ 增量缓存      │
+├────────────────────────────────────────────────────────────┤
+│  数据层  SQLite（文件索引 / 哈希缓存 / 引用表 / 会话）        │
+│  平台层  macOS Alias · Windows Shortcut · Linux 软硬链接     │
+└────────────────────────────────────────────────────────────┘
+</code></pre>
+<h3 id="52">5.2 主流程</h3>
+<p>扫描：选路径，套过滤规则，遍历文件，按大小预筛，算精确哈希（xxHash128），媒体类再算感知哈希，分桶聚类，跑引用完整性校验，出分组结果。</p>
+<p>处置：挑待删项，弹确认（显示占用空间和分组数），选策略（回收站、链接替换、移到隔离区、shred），执行，开 30 秒撤销窗口，落库记一笔。</p>
+<hr />
+<h2 id="6">6. 功能需求</h2>
+<p>优先级：P0 是 v1.0 上线必备，P1 在 v1.0 或 v1.1 交，P2 排进 v1.x。每条需求带编号，测试按编号拆用例。</p>
+<hr />
+<h3 id="fr-01-p0">FR-01 扫描范围与过滤（P0）</h3>
+<p>用户可以自己圈定扫哪儿，再套一层过滤，免得一扫全盘、结果几千条没法看。</p>
+<table>
+<thead>
+<tr>
+<th>编号</th>
+<th>需求点</th>
+<th>优先级</th>
+<th>需求描述</th>
+<th>验收标准</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>FR-01-1</td>
+<td>扫描源类型</td>
+<td>P0</td>
+<td>支持本地文件夹、整个驱动器、网络路径（SMB/NFS）、云同步目录（iCloud/OneDrive/坚果云）</td>
+<td>四种源都能扫出结果；网络路径支持保存用户名、密码、域</td>
+</tr>
+<tr>
+<td>FR-01-2</td>
+<td>范围选择</td>
+<td>P0</td>
+<td>多选手选路径做并集；带"只扫当前层，不含子目录"开关</td>
+<td>连选三个目录，重复文件不会进两组</td>
+</tr>
+<tr>
+<td>FR-01-3</td>
+<td>扩展名过滤</td>
+<td>P0</td>
+<td>按扩展名包含或排除，支持批量输入（<code>.jpg,.jpeg,.png</code>）和常用预设（图片、文档、音视频、代码）</td>
+<td><code>.lnk</code> 等默认进排除项；可切"排除未知扩展名"</td>
+</tr>
+<tr>
+<td>FR-01-4</td>
+<td>大小范围</td>
+<td>P0</td>
+<td>支持 min 到 max，单位 B/KB/MB/GB，也认 <code>500M</code> 这种写法</td>
+<td>填 <code>10M~</code> 只统计 10MB 以上的文件</td>
+</tr>
+<tr>
+<td>FR-01-5</td>
+<td>修改日期</td>
+<td>P0</td>
+<td>支持"早于 N 天""介于 X 到 Y""最近 N 天"</td>
+<td>设 180 天后，结果里不含 180 天内改过的文件</td>
+</tr>
+<tr>
+<td>FR-01-6</td>
+<td>文件属性</td>
+<td>P1</td>
+<td>按隐藏、系统、只读属性过滤（黑白名单）</td>
+<td>macOS 的 <code>.DS_Store</code>、Windows 的 <code>desktop.ini</code> 可单独排除</td>
+</tr>
+<tr>
+<td>FR-01-7</td>
+<td>跳过规则</td>
+<td>P0</td>
+<td>自动跳过符号链接自身、系统卷、缓存里已扫过且未变更的条目、被占用的文件</td>
+<td>扫到系统目录时弹提示问一句要不要继续</td>
+</tr>
+<tr>
+<td>FR-01-8</td>
+<td>数量与命名例外</td>
+<td>P2</td>
+<td>支持"忽略同名文件"，同目录内同名的不算重复</td>
+<td>同名同内容同目录的一组不出现在结果里</td>
+</tr>
+</tbody>
+</table>
+<hr />
+<h3 id="fr-02-p0">FR-02 多模式匹配算法（P0）</h3>
+<p>四级匹配，从字节完全一致到内容高度相似。</p>
+<table>
+<thead>
+<tr>
+<th>编号</th>
+<th>需求点</th>
+<th>优先级</th>
+<th>需求描述</th>
+<th>验收标准</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>FR-02-1</td>
+<td>内容哈希</td>
+<td>P0</td>
+<td>对内容算指纹，算法可选 xxHash128（默认）、MD5、SHA-1、SHA-256；可选"只读头尾 1MB"加速</td>
+<td>文件名和路径完全不同、二进制一致的两个文件判为重复；换算法结果可复现</td>
+</tr>
+<tr>
+<td>FR-02-2</td>
+<td>文件名和大小预筛</td>
+<td>P0</td>
+<td>先用大小和文件名分桶，快速剔掉大批</td>
+<td>大目录里预筛后候选集控制在全量 5% 以内</td>
+</tr>
+<tr>
+<td>FR-02-3</td>
+<td>模糊匹配，文档</td>
+<td>P0</td>
+<td>PDF/DOCX/XLSX/PPTX 提取文本层，归一化后比相似度（忽略空格换行和元数据）</td>
+<td>同一份文档换个封面和标题还能认出来</td>
+</tr>
+<tr>
+<td>FR-02-4</td>
+<td>模糊匹配，图片</td>
+<td>P1</td>
+<td>图片算感知哈希后聚类，见 FR-03</td>
+<td>—</td>
+</tr>
+<tr>
+<td>FR-02-5</td>
+<td>模糊匹配，音视频</td>
+<td>P1</td>
+<td>抽帧或抽频谱后比对，见 FR-03</td>
+<td>—</td>
+</tr>
+<tr>
+<td>FR-02-6</td>
+<td>匹配模式可切</td>
+<td>P0</td>
+<td>结果页能切"精确匹配"和"模糊匹配（含相似媒体）"，切完重新聚类</td>
+<td>切换后列表立即刷新，不用重扫</td>
+</tr>
+<tr>
+<td>FR-02-7</td>
+<td>结果分组</td>
+<td>P0</td>
+<td>同指纹聚成组，组内至少 2 个才显示；组内标出可释放空间</td>
+<td>三个同内容文件归一组，显示"可释放 1.2 GB"</td>
+</tr>
+</tbody>
+</table>
+<hr />
+<h3 id="fr-03-p0-p1">FR-03 感知哈希与相似媒体查找（P0 / P1）</h3>
+<p>解决"同一张照片被裁一下、调个色、压一压、改个尺寸还是同一张"这件事。</p>
+<table>
+<thead>
+<tr>
+<th>编号</th>
+<th>需求点</th>
+<th>优先级</th>
+<th>需求描述</th>
+<th>验收标准</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>FR-03-1</td>
+<td>图片 dHash</td>
+<td>P0</td>
+<td>差值哈希（64 位）认轻微编辑过的同图</td>
+<td>同一张 PNG 另存成 JPG 再压一轮仍能匹配</td>
+</tr>
+<tr>
+<td>FR-03-2</td>
+<td>图片 pHash</td>
+<td>P0</td>
+<td>感知哈希（DCT，64/128 位）认裁剪、调色、缩放、轻度水印</td>
+<td>缩到 50% 再拉回来、加个滤镜，还能匹配</td>
+</tr>
+<tr>
+<td>FR-03-3</td>
+<td>阈值调节</td>
+<td>P0</td>
+<td>0 到 100 的滑块，默认 90，实时显示当前阈值下的匹配对数，滑块动完重新聚类</td>
+<td>阈值从 90 拉到 99，匹配组明显变少，数字给到位</td>
+</tr>
+<tr>
+<td>FR-03-4</td>
+<td>音乐声学指纹</td>
+<td>P1</td>
+<td>用 Chromaprint/AcoustID 那套思路，认不同码率、不同标签、音量归一化后的同一首歌</td>
+<td>320kbps 和 128kbps 的同名文件判为重复</td>
+</tr>
+<tr>
+<td>FR-03-5</td>
+<td>视频帧比对</td>
+<td>P1</td>
+<td>按间隔抽关键帧算帧级 pHash，整段加权算相似度</td>
+<td>转过码（H.264 到 HEVC）的同源视频判为重复</td>
+</tr>
+<tr>
+<td>FR-03-6</td>
+<td>性能兜底</td>
+<td>P0</td>
+<td>感知哈希只在"同类型加相近大小"的候选对上算，不做 O(N²) 全比</td>
+<td>10 万张图开模糊匹配，90 秒内算完</td>
+</tr>
+</tbody>
+</table>
+<hr />
+<h3 id="fr-04-p0">FR-04 安全删除（P0）</h3>
+<p>这是产品的底线。任何一次删除都得能收回，默认不直接抹掉数据。</p>
+<table>
+<thead>
+<tr>
+<th>编号</th>
+<th>需求点</th>
+<th>优先级</th>
+<th>需求描述</th>
+<th>验收标准</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>FR-04-1</td>
+<td>回收站（默认）</td>
+<td>P0</td>
+<td>Windows 送回收站，macOS 送废纸篓，Linux 送 <code>~/.local/share/Trash</code></td>
+<td>删完在废纸篓里能看见，30 秒内可撤销并回到原路径</td>
+</tr>
+<tr>
+<td>FR-04-2</td>
+<td>硬链接和符号链接替换</td>
+<td>P1</td>
+<td>删副本后在原路径造一个指向保留文件的硬链接（同分区）或符号链接（跨分区）；删之前校验目标没被引用</td>
+<td>删完原路径照样能打开，不占双份空间；跨分区自动降级成软链并说明原因</td>
+</tr>
+<tr>
+<td>FR-04-3</td>
+<td>移到隔离文件夹</td>
+<td>P0</td>
+<td>提供"移到指定目录"策略，比如 <code>~/DupHunter-Quarantine/日期/</code>，方便人看一眼再决定</td>
+<td>文件落位准确，按 session 分目录，不堆一层</td>
+</tr>
+<tr>
+<td>FR-04-4</td>
+<td>永久删除</td>
+<td>P1</td>
+<td>支持永久删除（必要时调 shred/SDelete），前提是文件没被工程引用、不是系统文件，删之前列清单二次确认</td>
+<td>被引用或属于系统目录时，永久删除按钮置灰并说清原因</td>
+</tr>
+<tr>
+<td>FR-04-5</td>
+<td>撤销</td>
+<td>P0</td>
+<td>全局撤销栈（Ctrl+Z / Cmd+Z），至少能撤回最近 3 批删除</td>
+<td>撤销后文件回原路径，权限和时间戳基本保持</td>
+</tr>
+<tr>
+<td>FR-04-6</td>
+<td>删前确认</td>
+<td>P0</td>
+<td>执行前弹面板，列分组数、文件数、可释放空间、待删清单（带缩略图）</td>
+<td>不点确认，一个文件都不动</td>
+</tr>
+<tr>
+<td>FR-04-7</td>
+<td>空间预估</td>
+<td>P0</td>
+<td>列表顶部实时显示"当前可释放空间"，勾选时跟着动</td>
+<td>勾 5 个文件，顶部数字同步变</td>
+</tr>
+<tr>
+<td>FR-04-8</td>
+<td>回收站空间告急</td>
+<td>P2</td>
+<td>目标回收站或隔离区快满时提示换隔离目录</td>
+<td>—</td>
+</tr>
+</tbody>
+</table>
+<hr />
+<h3 id="fr-05-p0">FR-05 结果预览与对比（P0）</h3>
+<p>删除之前让用户看见东西，把盲删变成确认。</p>
+<table>
+<thead>
+<tr>
+<th>编号</th>
+<th>需求点</th>
+<th>优先级</th>
+<th>需求描述</th>
+<th>验收标准</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>FR-05-1</td>
+<td>图片缩略图</td>
+<td>P0</td>
+<td>网格视图用大缩略图，列表视图用小图加文件名、大小、路径、时间</td>
+<td>HEIC、RAW（CR2/NEF/ARW/RW2）、WebP、AVIF 都能出缩略图</td>
+</tr>
+<tr>
+<td>FR-05-2</td>
+<td>并排对比</td>
+<td>P0</td>
+<td>同组两张图并排放，可切"差异高亮"</td>
+<td>差异区域能高亮出来</td>
+</tr>
+<tr>
+<td>FR-05-3</td>
+<td>文本差异</td>
+<td>P0</td>
+<td>文本类文件逐行 diff，高亮增删行</td>
+<td>两个 txt/md/json 能 diff</td>
+</tr>
+<tr>
+<td>FR-05-4</td>
+<td>音频波形</td>
+<td>P0</td>
+<td>显示波形，点哪播哪，支持 A/B 双轨对比</td>
+<td>能同时播 A 和 B 听差别</td>
+</tr>
+<tr>
+<td>FR-05-5</td>
+<td>视频关键帧</td>
+<td>P1</td>
+<td>自动抽首帧和中段帧，左右切换对比</td>
+<td>—</td>
+</tr>
+<tr>
+<td>FR-05-6</td>
+<td>元信息面板</td>
+<td>P0</td>
+<td>显示路径、大小、创建和修改时间、EXIF（相机、镜头、焦距、ISO、拍摄时间）、文件属性</td>
+<td>摄影文件能看到 EXIF 和拍摄时间</td>
+</tr>
+<tr>
+<td>FR-05-7</td>
+<td>外部程序打开</td>
+<td>P1</td>
+<td>右键"用系统默认程序打开"</td>
+<td>—</td>
+</tr>
+</tbody>
+</table>
+<hr />
+<h3 id="fr-06-p0-p1">FR-06 智能选择助手（P0 / P1）</h3>
+<p>用规则替用户想"这组留哪个"，不用一组组点。</p>
+<table>
+<thead>
+<tr>
+<th>编号</th>
+<th>需求点</th>
+<th>优先级</th>
+<th>需求描述</th>
+<th>验收标准</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>FR-06-1</td>
+<td>内置保留策略</td>
+<td>P0</td>
+<td>六种：保留最新创建的、保留最早创建的、保留路径最短的、保留文件名最长的、保留位于指定文件夹的（比如 <code>原片</code> 目录）、保留体积最大的</td>
+<td>每种规则能一键应用到全量或当前视图</td>
+</tr>
+<tr>
+<td>FR-06-2</td>
+<td>组合规则</td>
+<td>P1</td>
+<td>多条规则按优先级排，命中即停，也支持自定义表达式</td>
+<td>能跑通"优先保留 RAW，组内没有 RAW 就留分辨率最高的 JPG"</td>
+</tr>
+<tr>
+<td>FR-06-3</td>
+<td>逐组决策</td>
+<td>P0</td>
+<td>除批量规则外，支持"这组就这么选，同样选择应用到全部"</td>
+<td>勾一次能批量下发</td>
+</tr>
+<tr>
+<td>FR-06-4</td>
+<td>反向选择</td>
+<td>P0</td>
+<td>一键全选、反选、全不选，以及"选中所有非首选项"</td>
+<td>反选后待删项等于没标保留的那批</td>
+</tr>
+<tr>
+<td>FR-06-5</td>
+<td>规则复用</td>
+<td>P1</td>
+<td>规则集存成配置文件，能复用也能发给同事</td>
+<td>—</td>
+</tr>
+<tr>
+<td>FR-06-6</td>
+<td>标记可视化</td>
+<td>P0</td>
+<td>保留项打绿标，待删项标红置灰，和删除面板状态一致</td>
+<td>—</td>
+</tr>
+<tr>
+<td>FR-06-7</td>
+<td>危险操作保护</td>
+<td>P0</td>
+<td>一组里全标了保留时，禁止对该组执行删除，提示"这组没有可清理项"</td>
+<td>—</td>
+</tr>
+</tbody>
+</table>
+<hr />
+<h3 id="fr-07-p0">FR-07 引用完整性保护（P0）</h3>
+<p>删一个文件之前，先知道有没有别的软件正指着它用。</p>
+<table>
+<thead>
+<tr>
+<th>编号</th>
+<th>需求点</th>
+<th>优先级</th>
+<th>需求描述</th>
+<th>验收标准</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>FR-07-1</td>
+<td>项目引用检查</td>
+<td>P0</td>
+<td>扫描并解析常见项目文件和索引文件，标出其中引用的素材路径：Lightroom（<code>.lrcat</code>/<code>.lrcatalog</code> 的 SQLite）、Premiere（<code>.prproj</code>）、After Effects（<code>.aep</code>）、Logic（<code>.logicx</code>）、iTunes（<code>.itl</code>）、MySQL 数据目录、Docker 与虚拟机镜像</td>
+<td>被 Lightroom 目录引用的照片显示"被引用 · Lightroom"，默认不可选删</td>
+</tr>
+<tr>
+<td>FR-07-2</td>
+<td>快捷方式和别名</td>
+<td>P0</td>
+<td>解析 Windows <code>.lnk</code>、macOS 别名、Linux 软硬链接，建立"链接到目标"的映射；目标在待删列表时，链接本身算保护项</td>
+<td>软链的目标进了待删，软链变红且不可选</td>
+</tr>
+<tr>
+<td>FR-07-3</td>
+<td>系统文件保护锁</td>
+<td>P0</td>
+<td>自动排除并锁定系统关键目录：Windows 的 <code>Windows</code>、<code>Program Files</code>、<code>System32</code>、<code>AppData</code>；macOS 的 <code>/System</code>、<code>/usr</code>、<code>/Library</code>、<code>~/Library</code></td>
+<td>用户没法对这些目录里的文件做永久删除</td>
+</tr>
+<tr>
+<td>FR-07-4</td>
+<td>保护级别</td>
+<td>P1</td>
+<td>三档：严格（被引用即保护）、宽松（被引用只提示）、自定义（用户自己导保护路径和扩展名清单）</td>
+<td>—</td>
+</tr>
+<tr>
+<td>FR-07-5</td>
+<td>引用来源可见</td>
+<td>P0</td>
+<td>列表里显示引用来源标签（哪个项目、哪个快捷方式），点标签能跳到引用位置</td>
+<td>—</td>
+</tr>
+<tr>
+<td>FR-07-6</td>
+<td>基准快照对比</td>
+<td>P2</td>
+<td>以历史扫描为基准，只标新增或消失的文件</td>
+<td>—</td>
+</tr>
+</tbody>
+</table>
+<hr />
+<h3 id="fr-08-p0">FR-08 高性能与增量扫描（P0）</h3>
+<p>面向百万级文件的工程能力。</p>
+<table>
+<thead>
+<tr>
+<th>编号</th>
+<th>需求点</th>
+<th>优先级</th>
+<th>需求描述</th>
+<th>验收标准</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>FR-08-1</td>
+<td>多线程异步 IO</td>
+<td>P0</td>
+<td>扫描和哈希阶段并行，吃满 NVMe 的高并发；IO 和 CPU 解耦</td>
+<td>百万文件约 200GB，首次扫描 10 分钟内（NVMe，基线见附录 B）</td>
+</tr>
+<tr>
+<td>FR-08-2</td>
+<td>增量缓存</td>
+<td>P0</td>
+<td>用路径加 inode/dev 加 mtime 加 size 加部分哈希当键，缓存算过的指纹；二次扫描只处理新增、变更、缺失的文件</td>
+<td>全量后再跑一次 1 分钟内出结果，且结果一致</td>
+</tr>
+<tr>
+<td>FR-08-3</td>
+<td>内存映射</td>
+<td>P0</td>
+<td>大文件（4K 视频、ISO 镜像、Docker 镜像）用 mmap 零拷贝读，不整块进内存</td>
+<td>扫一个 80GB 的 ISO，内存峰值 512MB 以内</td>
+</tr>
+<tr>
+<td>FR-08-4</td>
+<td>大文件优化</td>
+<td>P0</td>
+<td>可选"头尾哈希"（首尾各读 1MB）加速超大文件，精度下降，UI 上要标出来</td>
+<td>—</td>
+</tr>
+<tr>
+<td>FR-08-5</td>
+<td>进度与中断</td>
+<td>P0</td>
+<td>实时进度（已扫数量、当前阶段、预估剩余），可暂停、继续、中断；断了能接着扫</td>
+<td>中途停掉再跑，从缓存里的断点续</td>
+</tr>
+<tr>
+<td>FR-08-6</td>
+<td>结果索引</td>
+<td>P0</td>
+<td>结果落 SQLite，支持按组、路径、大小、时间排序筛选和搜索</td>
+<td>10 万组结果里搜索响应 200ms 内</td>
+</tr>
+<tr>
+<td>FR-08-7</td>
+<td>资源上限</td>
+<td>P1</td>
+<td>用户可设最大并发线程数和内存上限，照顾低配机器</td>
+<td>—</td>
+</tr>
+</tbody>
+</table>
+<hr />
+<h3 id="fr-09-p1-p2">FR-09 自动化与工作流集成（P1 / P2）</h3>
+<table>
+<thead>
+<tr>
+<th>编号</th>
+<th>需求点</th>
+<th>优先级</th>
+<th>需求描述</th>
+<th>验收标准</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>FR-09-1</td>
+<td>命令行</td>
+<td>P1</td>
+<td>提供 <code>dup</code> 子命令：<code>scan</code>（路径、过滤、算法、阈值）、<code>report</code>（导出）、<code>delete</code>（按报告或规则，配 <code>--dry-run</code>）、<code>session</code>（保存和恢复）</td>
+<td><code>--dry-run</code> 只出计划不产生改动；脚本调用有退出码，0 成功、2 冲突</td>
+</tr>
+<tr>
+<td>FR-09-2</td>
+<td>会话保存恢复</td>
+<td>P1</td>
+<td>扫描中断能续；结果存成 <code>.dhsess</code> 项目文件，以后加载接着改</td>
+<td>session 能跨机器传，路径对不上时给提示</td>
+</tr>
+<tr>
+<td>FR-09-3</td>
+<td>报告导出</td>
+<td>P0</td>
+<td>导出 CSV、HTML、XML、JSON，字段含路径、大小、哈希、相似度、分组 ID、可释放空间</td>
+<td>CSV 用 Excel 直接打开不乱码，BOM 可开关</td>
+</tr>
+<tr>
+<td>FR-09-4</td>
+<td>报告用途</td>
+<td>P0</td>
+<td>报告要能过审计和合规：带扫描时间、机器信息、规则参数、结果说明</td>
+<td>—</td>
+</tr>
+<tr>
+<td>FR-09-5</td>
+<td>定时任务</td>
+<td>P2</td>
+<td>给出群晖、威联通的 cron 写法和 GitHub Actions 示例</td>
+<td>—</td>
+</tr>
+<tr>
+<td>FR-09-6</td>
+<td>无人值守清理</td>
+<td>P2</td>
+<td>支持"扫描、按规则标记、送隔离区"一条流水线跑完</td>
+<td>—</td>
+</tr>
+</tbody>
+</table>
+<hr />
+<h3 id="fr-10-p1-p2">FR-10 特殊格式支持（P1 / P2）</h3>
+<table>
+<thead>
+<tr>
+<th>编号</th>
+<th>需求点</th>
+<th>优先级</th>
+<th>需求描述</th>
+<th>验收标准</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>FR-10-1</td>
+<td>压缩包内扫描</td>
+<td>P1</td>
+<td>不解压直接列 ZIP、RAR 1-5、7Z、TAR.GZ 的内部条目，按内容指纹参与去重；提供"解压后比对"开关（<code>--explode</code>）</td>
+<td>两个内嵌了同一份 PDF 的 ZIP 判为重复组</td>
+</tr>
+<tr>
+<td>FR-10-2</td>
+<td>RAW 加 JPEG 配对</td>
+<td>P1</td>
+<td>摄影专用：按主文件名一致把 <code>IMG_0001.CR2</code> 和 <code>IMG_0001.JPG</code> 归成一个媒体单元，不算彼此重复；单元整体保留或清理</td>
+<td>同目录的 RAW 和 JPG 不会互相进对方的重复组</td>
+</tr>
+<tr>
+<td>FR-10-3</td>
+<td>配对策略可配</td>
+<td>P2</td>
+<td>扩展名映射表可改（比如 <code>.CR2</code> 对 <code>.JPG</code>、<code>ARW</code> 对 <code>.JPG</code>），是否跨目录配对也可配</td>
+<td>—</td>
+</tr>
+<tr>
+<td>FR-10-4</td>
+<td>元数据副本</td>
+<td>P2</td>
+<td>用 EXIF 哈希（拍摄参数加时间）认"同一次拍出来的多份导出"</td>
+<td>—</td>
+</tr>
+</tbody>
+</table>
+<hr />
+<h2 id="7">7. 数据模型与存储</h2>
+<h3 id="71-sqlite">7.1 表结构（SQLite）</h3>
+<table>
+<thead>
+<tr>
+<th>表</th>
+<th>作用</th>
+<th>关键字段</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>file_index</code></td>
+<td>文件索引</td>
+<td>路径、名称、扩展名、大小、mtime、ctime、inode、dev、mode（隐藏/系统）、哈希算法、哈希、pHash、部分哈希、状态（新增/扫描中/已扫/已删/出错）</td>
+</tr>
+<tr>
+<td><code>hash_cache</code></td>
+<td>增量缓存</td>
+<td>路径键（路径+inode+size+mtime）、哈希、计算时间</td>
+</tr>
+<tr>
+<td><code>duplicate_group</code></td>
+<td>重复分组</td>
+<td>分组 ID、匹配模式（精确/相似/媒体）、阈值、组内文件数、浪费字节、创建时间</td>
+</tr>
+<tr>
+<td><code>group_member</code></td>
+<td>组内成员</td>
+<td>分组 ID、文件 ID、标记（保留/删除）、是否受保护、被谁保护</td>
+</tr>
+<tr>
+<td><code>reference_link</code></td>
+<td>引用关系</td>
+<td>来源路径（项目文件）、目标路径、类型（lrcat/prproj/lnk/alias/symlink/hardlink）、解析时间</td>
+</tr>
+<tr>
+<td><code>session</code></td>
+<td>会话</td>
+<td>会话 ID、名称、参数 JSON、状态、创建时间、中断时间</td>
+</tr>
+<tr>
+<td><code>action_log</code></td>
+<td>删除审计</td>
+<td>记录 ID、会话 ID、动作类型、原路径、新路径、是否已撤销、撤销时间</td>
+</tr>
+<tr>
+<td><code>rule_set</code></td>
+<td>规则集</td>
+<td>规则集 ID、名称、规则 JSON、是否默认</td>
+</tr>
+</tbody>
+</table>
+<h3 id="72">7.2 位置与清理</h3>
+<p>索引库默认放在：Windows <code>%LOCALAPPDATA%\DupHunter\cache.db</code>；macOS <code>~/Library/Application Support/DupHunter/cache.db</code>；Linux <code>~/.local/share/duphunter/cache.db</code>。CLI 可用 <code>--config-dir</code> 改位置。</p>
+<p>索引能单独清（"只清缓存，不动用户数据"），另有"清空全部历史"的入口，两个动作要讲清区别再确认。隔离目录按会话分：<code>~/DupHunter-Quarantine/YYYYMMDD-HHmmss/</code>。</p>
+<hr />
+<h2 id="8">8. 非功能需求</h2>
+<h3 id="81">8.1 性能</h3>
+<table>
+<thead>
+<tr>
+<th>指标</th>
+<th>目标</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>首次扫描吞吐（NVMe，普通文件）</td>
+<td>每分钟 30 万文件以上</td>
+</tr>
+<tr>
+<td>增量扫描</td>
+<td>每分钟 200 万文件以上</td>
+</tr>
+<tr>
+<td>内存峰值（100 万文件）</td>
+<td>600MB 以内</td>
+</tr>
+<tr>
+<td>单个大文件（≥50GB）</td>
+<td>mmap 流式处理，不会因为一个文件 OOM</td>
+</tr>
+<tr>
+<td>结果检索</td>
+<td>10 万组以内 200ms 响应</td>
+</tr>
+<tr>
+<td>冷启动到可交互</td>
+<td>2 秒内</td>
+</tr>
+</tbody>
+</table>
+<h3 id="82">8.2 兼容性</h3>
+<table>
+<thead>
+<tr>
+<th>类别</th>
+<th>要求</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>系统</td>
+<td>Windows 10/11（x64、ARM64）、macOS 12 以上（Intel 和 Apple Silicon）、Linux（glibc 2.31+，x64/ARM64）</td>
+</tr>
+<tr>
+<td>文件系统</td>
+<td>NTFS、APFS、HFS+、exFAT、ext4、FAT32，以及 SMB/NFS 挂载盘</td>
+</tr>
+<tr>
+<td>技术选型</td>
+<td>核心建议 Rust，GUI 用 Tauri 2 加系统原生 WebView，包体小且三平台一致</td>
+</tr>
+<tr>
+<td>权限</td>
+<td>扫用户目录不需要管理员/root；访问网络路径时按需提权</td>
+</tr>
+</tbody>
+</table>
+<h3 id="83">8.3 安全与隐私</h3>
+<ul>
+<li>全程本地处理，文件路径和内容一个字节都不往外发。可选的匿名统计默认关掉，打开也要写清楚。</li>
+<li>删除走系统原生通道（回收站 API），不自己实现 delete。</li>
+<li>提供隐私模式：日志、报告、崩溃信息里不出现绝对路径和文件名。</li>
+</ul>
+<h3 id="84">8.4 可用性与可维护性</h3>
+<ul>
+<li>全键盘可操作，配快捷键；首次启动给 5 步引导。</li>
+<li>出错要说人话：权限不够、文件被占、坏道、断网，都要给出具体路径和原因，不能静默吞掉。</li>
+<li>日志分 debug/info/warn/error 四级，CLI 支持 <code>--verbose</code>。</li>
+</ul>
+<hr />
+<h2 id="9">9. 界面与交互</h2>
+<table>
+<thead>
+<tr>
+<th>页面</th>
+<th>关键元素</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>主界面，三栏</td>
+<td>左：扫描源树加过滤条件；中：重复分组列表，网格和列表可切；右：元素详情，含缩略图、元信息、引用来源</td>
+</tr>
+<tr>
+<td>扫描配置</td>
+<td>路径卡片、过滤卡片（类型、大小、日期、属性）、匹配卡片（精确、模糊加阈值滑块）、性能卡片（线程数、缓存、内存上限）</td>
+</tr>
+<tr>
+<td>结果对比</td>
+<td>整组缩略图矩阵；选两张进并排对比和差异高亮</td>
+</tr>
+<tr>
+<td>智能助手</td>
+<td>规则列表可拖拽排序，"应用到当前视图"或"应用到全部"，反向选择，受保护项锁定的提示</td>
+</tr>
+<tr>
+<td>删除确认</td>
+<td>三步：清单和可释放空间、选策略（回收站、链接替换、隔离区、永久）、执行；底部常驻撤销入口，30 秒倒计时</td>
+</tr>
+<tr>
+<td>报告</td>
+<td>导出按钮、格式选择、字段选择</td>
+</tr>
+</tbody>
+</table>
+<p>通用约束：任何不可逆操作都要有确认面板加撤销入口，撤销入口在页面上一直看得见；默认选中策略取比较安全的那档，不预选永久删除；列表支持 Ctrl/Shift/Cmd 多选、跨组选择、按可释放空间排序、搜路径。</p>
+<hr />
+<h2 id="10">10. 异常与边界</h2>
+<table>
+<thead>
+<tr>
+<th>编号</th>
+<th>场景</th>
+<th>期望行为</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>E-01</td>
+<td>文件被别的程序占着删不掉</td>
+<td>标"占用"跳过，提示关掉程序再试</td>
+</tr>
+<tr>
+<td>E-02</td>
+<td>跨分区做硬链接替换</td>
+<td>自动降级成符号链接，在列表里写清原因</td>
+</tr>
+<tr>
+<td>E-03</td>
+<td>网络路径中途断</td>
+<td>本批标"出错"，已扫部分留着，可以续扫</td>
+</tr>
+<tr>
+<td>E-04</td>
+<td>扫到系统目录</td>
+<td>默认排除并提示，不进可选删</td>
+</tr>
+<tr>
+<td>E-05</td>
+<td>回收站快满了</td>
+<td>提示换隔离目录，或者分批处理</td>
+</tr>
+<tr>
+<td>E-06</td>
+<td>父子目录重复扫同一批文件</td>
+<td>自动去重，提示"已跳过嵌套路径 X"</td>
+</tr>
+<tr>
+<td>E-07</td>
+<td>一组里文件特别多（上千）</td>
+<td>分页或虚拟滚动，界面不卡</td>
+</tr>
+<tr>
+<td>E-08</td>
+<td>坏道导致读取中断</td>
+<td>记"出错"状态跳过这个文件，不中断整批</td>
+</tr>
+<tr>
+<td>E-09</td>
+<td>只清索引但留结果</td>
+<td>两个清法的区别要说清楚，二次确认</td>
+</tr>
+</tbody>
+</table>
+<hr />
+<h2 id="11_1">11. 埋点（可选，默认关）</h2>
+<table>
+<thead>
+<tr>
+<th>事件</th>
+<th>字段</th>
+<th>用途</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>scan_started / scan_finished</td>
+<td>文件数、耗时、模式、阈值</td>
+<td>看性能基线</td>
+</tr>
+<tr>
+<td>group_shown</td>
+<td>匹配模式</td>
+<td>看精确和模糊各用多少</td>
+</tr>
+<tr>
+<td>selection_applied</td>
+<td>规则 ID</td>
+<td>看哪类保留策略最常被用</td>
+</tr>
+<tr>
+<td>delete_executed / undone</td>
+<td>方式、文件大小</td>
+<td>验证安全机制有没有用上</td>
+</tr>
+<tr>
+<td>protection_blocked</td>
+<td>保护原因</td>
+<td>衡量 FR-07 的价值</td>
+</tr>
+</tbody>
+</table>
+<hr />
+<h2 id="12_1">12. 风险与对策</h2>
+<table>
+<thead>
+<tr>
+<th>编号</th>
+<th>风险</th>
+<th>影响</th>
+<th>概率</th>
+<th>对策</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>R-01</td>
+<td>误删用户数据</td>
+<td>信任直接崩</td>
+<td>中</td>
+<td>默认回收站加 30 秒撤销，加引用保护；永久删除要双重确认且禁用于受保护文件；灰度期先给"只扫不删"的教学模式</td>
+</tr>
+<tr>
+<td>R-02</td>
+<td>感知哈希把不同内容判成一样</td>
+<td>数据丢失</td>
+<td>中</td>
+<td>默认阈值 90；模糊结果单独分组，必须人工复核才让删；做差异预览</td>
+</tr>
+<tr>
+<td>R-03</td>
+<td>大目录扫描把 CPU 和内存吃满</td>
+<td>体验差</td>
+<td>中</td>
+<td>并发和内存上限可调，默认按 CPU 核数自适应，后台扫描能最小化</td>
+</tr>
+<tr>
+<td>R-04</td>
+<td>三平台回收站 API 不一样</td>
+<td>兼容性</td>
+<td>高</td>
+<td>用平台官方 API 而不是自己 move 文件，集成测试覆盖 Windows、macOS、Linux</td>
+</tr>
+<tr>
+<td>R-05</td>
+<td>新版本 Lightroom 或 Premiere 的项目格式变了</td>
+<td>保护失效</td>
+<td>中</td>
+<td>解析失败时按"宁可误保护也不误删"处理，同时把解析告警报上来</td>
+</tr>
+<tr>
+<td>R-06</td>
+<td>RAW 解码库把包体撑大</td>
+<td>包体和启动</td>
+<td>中</td>
+<td>缩略图解码做成可选组件，按需下载或懒加载</td>
+</tr>
+</tbody>
+</table>
+<hr />
+<h2 id="13">13. 版本规划</h2>
+<table>
+<thead>
+<tr>
+<th>版本</th>
+<th>范围</th>
+<th>交付</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>v0.9 内测 Alpha</td>
+<td>P0 核心闭环</td>
+<td>FR-01/02/04/05/07/08 基础版，精确匹配，回收站删除，SQLite 增量</td>
+</tr>
+<tr>
+<td>v1.0 公开 Beta</td>
+<td>加智能助手</td>
+<td>补齐 FR-03（图片 pHash 和 dHash 加阈值）、FR-06（保留策略和反向选择）、FR-09-3（报告导出）、三平台 UI</td>
+</tr>
+<tr>
+<td>v1.1</td>
+<td>专业媒体</td>
+<td>FR-03-4/05（音乐和视频指纹）、FR-10-2（RAW 加 JPEG 配对）、FR-09-1（CLI）</td>
+</tr>
+<tr>
+<td>v1.2</td>
+<td>自动化</td>
+<td>FR-09 全量（会话、报告、定时任务）、FR-10-1（压缩包内扫描）、FR-07-4（保护级别）、FR-08-7（资源上限）</td>
+</tr>
+<tr>
+<td>v2.0</td>
+<td>生态</td>
+<td>FR-10-3/04、FR-07-6（基准快照）、跨设备会话、NAS 官方插件</td>
+</tr>
+</tbody>
+</table>
+<hr />
+<h2 id="14-definition-of-done">14. 验收标准（Definition of Done）</h2>
+<ol>
+<li>所有 P0 需求 100% 实现，验收用例全过。</li>
+<li>Windows 11、macOS 14（Apple Silicon）、Ubuntu 22.04 上扫同一个目录，重复组的结论一致。</li>
+<li>100 万文件、200GB 以上的压力测试达到附录 B 的性能基线。</li>
+<li>随机执行 200 组删除，撤销成功率 100%，误删 0 起。</li>
+<li>连续跑 24 小时扫描任务不崩，无 P0/P1 级崩溃和内存泄漏。</li>
+<li>隐私评审通过：全量抓包无外发请求（用户显式打开检查更新除外）。</li>
+</ol>
+<hr />
+<h2 id="a">附录 A 名词表</h2>
+<table>
+<thead>
+<tr>
+<th>术语</th>
+<th>含义</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>内容哈希</td>
+<td>对文件二进制内容算的摘要（xxHash、MD5、SHA），内容一样哈希就一样</td>
+</tr>
+<tr>
+<td>感知哈希 pHash</td>
+<td>基于 DCT 的感知摘要，容忍缩放、压缩、调色，容不让由阈值说了算</td>
+</tr>
+<tr>
+<td>dHash</td>
+<td>差值哈希，取相邻像素灰度差生成 64 位，对轻微编辑很敏感</td>
+</tr>
+<tr>
+<td>声学指纹</td>
+<td>从音频波形提的听觉指纹（比如 Chromaprint），忽略码率和元数据差异</td>
+</tr>
+<tr>
+<td>硬链接</td>
+<td>同一文件系统里多个目录指向同一个 inode，删一个不影响数据</td>
+</tr>
+<tr>
+<td>符号链接</td>
+<td>路径级引用，能跨分区，但源文件没了它就失效</td>
+</tr>
+<tr>
+<td>macOS 别名 / Windows 快捷方式</td>
+<td>指向原文件的引用文件，原文件没了它们就废</td>
+</tr>
+<tr>
+<td>引用完整性</td>
+<td>删之前确认文件没被任何项目、链接或系统组件指着用</td>
+</tr>
+<tr>
+<td>增量扫描</td>
+<td>靠上次的缓存只处理变更文件的扫描方式</td>
+</tr>
+<tr>
+<td>媒体单元</td>
+<td>RAW 加同名 JPEG 当一个整体看，不算彼此重复</td>
+</tr>
+</tbody>
+</table>
+<h2 id="b">附录 B 技术选型建议（供研发评估，不是最终决策）</h2>
+<table>
+<thead>
+<tr>
+<th>领域</th>
+<th>建议</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>语言</td>
+<td>Rust，做核心引擎，性能、内存、跨平台都省心</td>
+</tr>
+<tr>
+<td>GUI</td>
+<td>Tauri 2 加原生 WebView，包体小</td>
+</tr>
+<tr>
+<td>算法</td>
+<td>xxHash128 做精确匹配，pHash/DCT 做图片，Chromaprint 做音频，抽样帧 pHash 做视频</td>
+</tr>
+<tr>
+<td>并行</td>
+<td>rayon 加 tokio/async-std，大文件用 mmap</td>
+</tr>
+<tr>
+<td>存储</td>
+<td>SQLite，开 WAL 模式配合增量缓存</td>
+</tr>
+<tr>
+<td>跨平台交互</td>
+<td>macOS 用 NSWorkspace 回收站 API，Windows 用 SHFileOperation/IFileOperation，Linux 用 GLib Trash</td>
+</tr>
+<tr>
+<td>文档模糊匹配</td>
+<td>提文本层做归一化，再用 Jaccard 或 TF-IDF 余弦算相似度</td>
+</tr>
+<tr>
+<td>分发</td>
+<td>Windows 用 NSIS/MSI，macOS 用 .dmg，Linux 用 AppImage 或 deb</td>
+</tr>
+</tbody>
+</table>
+<p>性能基线要在 v0.9 内测阶段实测后回填本文档，作为 v1.0 的验收阈值。</p>
+<hr />
+<p>以上。</p>
+</div></body></html>

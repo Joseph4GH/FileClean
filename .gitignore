@@ -1,0 +1,21 @@
+node_modules
+dist
+dist-ssr
+dist-preview
+*.local
+
+# Rust / Tauri
+src-tauri/target
+src-tauri/gen
+
+# Environment — real secrets never live in the repo
+.env
+.env.local
+.env.*.local
+
+# Editors / OS
+.DS_Store
+.idea
+.vscode/*
+!.vscode/extensions.json
+*.log

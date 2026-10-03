@@ -1,0 +1,145 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>FileClean 重复文件报告</title>
+<style>
+  :root {
+    --bg: #f6f7f9; --card: #ffffff; --line: #e5e7eb; --text: #1f2328;
+    --muted: #656d76; --keep: #1a7f37; --remove: #cf222e; --accent: #0969da;
+  }
+  * { box-sizing: border-box; }
+  body { margin: 0; padding: 32px; background: var(--bg); color: var(--text);
+         font: 14px/1.6 -apple-system, "PingFang SC", "Microsoft YaHei", system-ui, sans-serif; }
+  h1 { font-size: 22px; margin: 0 0 4px; }
+  .sub { color: var(--muted); margin-bottom: 24px; }
+  .cards { display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 12px; margin-bottom: 24px; }
+  .card { background: var(--card); border: 1px solid var(--line); border-radius: 10px; padding: 16px; }
+  .card .k { color: var(--muted); font-size: 12px; }
+  .card .v { font-size: 22px; font-weight: 600; margin-top: 4px; }
+  .card .v.em { color: var(--remove); }
+  .toolbar { display: flex; gap: 8px; margin-bottom: 12px; flex-wrap: wrap; }
+  .toolbar input, .toolbar select { padding: 6px 10px; border: 1px solid var(--line);
+        border-radius: 6px; background: var(--card); color: var(--text); }
+  table { width: 100%; border-collapse: collapse; background: var(--card);
+           border: 1px solid var(--line); border-radius: 10px; overflow: hidden; }
+  th, td { padding: 8px 10px; border-bottom: 1px solid var(--line); text-align: left; vertical-align: top; }
+  th { background: #f0f2f5; font-weight: 600; cursor: pointer; user-select: none; white-space: nowrap; font-size: 12px; }
+  tr:last-child td { border-bottom: none; }
+  tr.keep td { background: #f0fbf3; }
+  tr.remove td { background: #fff5f5; }
+  tr.group-head td { background: #eef4ff; font-weight: 600; }
+  .tag { display: inline-block; padding: 1px 7px; border-radius: 999px; font-size: 12px; border: 1px solid var(--line); }
+  .tag.keep { color: var(--keep); border-color: #b7e0c3; background: #eafaf0; }
+  .tag.remove { color: var(--remove); border-color: #f5bcbc; background: #fdecec; }
+  .path { font-family: ui-monospace, SFMono-Regular, Menlo, monospace; font-size: 12px; word-break: break-all; }
+  .muted { color: var(--muted); font-size: 12px; }
+  .reasons { color: var(--muted); font-size: 12px; }
+  footer { margin-top: 24px; color: var(--muted); font-size: 12px; }
+</style>
+</head>
+<body>
+<h1>FileClean 重复文件报告</h1>
+<div class="sub">扫描时间 2026-10-03 14:57:26 · 指纹算法 blake3 · 共 6 个分组</div>
+
+<div class="cards">
+  <div class="card"><div class="k">可回收空间</div><div class="v em">1.92 MB</div></div>
+  <div class="card"><div class="k">待清理文件</div><div class="v">4</div></div>
+  <div class="card"><div class="k">扫描文件总数</div><div class="v">28</div></div>
+  <div class="card"><div class="k">参与哈希文件</div><div class="v">18</div></div>
+  <div class="card"><div class="k">增量缓存命中</div><div class="v">0</div></div>
+  <div class="card"><div class="k">耗时</div><div class="v">0.1s</div></div>
+</div>
+
+<div class="toolbar">
+  <input id="q" placeholder="按路径 / 文件名过滤…" style="flex:1;min-width:220px">
+  <select id="kind">
+    <option value="">全部匹配类型</option>
+    <option value="完全重复">完全重复</option>
+    <option value="图片相似">图片相似</option>
+    <option value="音频相似">音频相似</option>
+    <option value="压缩包内重复">压缩包内重复</option>
+    <option value="RAW/JPEG 配对">RAW/JPEG 配对</option>
+  </select>
+  <select id="decision">
+    <option value="">全部决策</option>
+    <option value="待清理">仅待清理</option>
+    <option value="保留">仅保留</option>
+  </select>
+</div>
+
+<table id="tbl">
+<thead><tr>
+  <th data-i="0">决策</th><th data-i="1">匹配类型</th><th data-i="2">文件名</th>
+  <th data-i="3">体积</th><th data-i="4">修改时间</th><th data-i="5">完整路径</th><th data-i="6">判定理由</th>
+</tr></thead>
+<tbody>
+<tr class="group-head"><td colspan="7">song-a-lowrate.wav · 分组 96c09512 · 可回收 1.51 MB · 相似度 98.1%</td></tr><tr class=""><td><span class="tag ">未决策</span></td><td>音频相似</td><td>song-a-lowrate.wav<div class="muted">wav</div></td><td>516.84 KB</td><td class="muted">2026-10-03 14:57:26</td><td class="path">/private/tmp/fx-demo/music/song-a-lowrate.wav</td><td class="reasons">相似组默认不自动标记，请人工确认后选择</td></tr><tr class=""><td><span class="tag ">未决策</span></td><td>音频相似</td><td>song-a.wav<div class="muted">wav</div></td><td>1.01 MB</td><td class="muted">2026-10-03 14:57:26</td><td class="path">/private/tmp/fx-demo/music/song-a.wav</td><td class="reasons">相似组默认不自动标记，请人工确认后选择</td></tr><tr class="group-head"><td colspan="7">sunset-hd.png · 分组 8d0341d4 · 可回收 285.64 KB · 相似度 100.0%</td></tr><tr class=""><td><span class="tag ">未决策</span></td><td>图片相似</td><td>sunset-hd.png<div class="muted">png</div></td><td>164.31 KB</td><td class="muted">2026-10-03 14:57:24</td><td class="path">/private/tmp/fx-demo/photos/trip/sunset-hd.png</td><td class="reasons">相似组默认不自动标记，请人工确认后选择</td></tr><tr class=""><td><span class="tag ">未决策</span></td><td>图片相似</td><td>sunset.png<div class="muted">png</div></td><td>121.33 KB</td><td class="muted">2026-10-03 14:57:22</td><td class="path">/private/tmp/fx-demo/photos/trip/sunset.png</td><td class="reasons">相似组默认不自动标记，请人工确认后选择</td></tr><tr class="group-head"><td colspan="7">beach.png · 分组 3879db23 · 可回收 122.48 KB</td></tr><tr class="keep"><td><span class="tag keep">保留</span></td><td>完全重复</td><td>beach.png<div class="muted">png</div></td><td>122.48 KB</td><td class="muted">2026-10-03 14:57:20</td><td class="path">/private/tmp/fx-demo/photos/2024/beach.png</td><td class="reasons">与组内其它条目指向同一物理文件（硬链接），删除不释放空间</td></tr><tr class="remove"><td><span class="tag remove">待清理</span></td><td>完全重复</td><td>beach-copy.png<div class="muted">png</div></td><td>122.48 KB</td><td class="muted">2026-10-03 14:57:20</td><td class="path">/private/tmp/fx-demo/photos/2024/beach-copy.png</td><td class="reasons">组内已保留 beach.png；保留项更优：保留路径最短</td></tr><tr class="group-head"><td colspan="7">report.txt · 分组 557a437e · 可回收 2.27 KB</td></tr><tr class="keep"><td><span class="tag keep">保留</span></td><td>完全重复</td><td>report.txt<div class="muted">txt</div></td><td>1.13 KB</td><td class="muted">2026-10-03 14:57:19</td><td class="path">/private/tmp/fx-demo/docs/report.txt</td><td class="reasons">🔒 已保护：被 Smoke.lrcat 直接引用（完整路径命中）；与组内其它条目指向同一物理文件（硬链接），删除不释放空间</td></tr><tr class="remove"><td><span class="tag remove">待清理</span></td><td>完全重复</td><td>report-copy.txt<div class="muted">txt</div></td><td>1.13 KB</td><td class="muted">2026-10-03 14:57:19</td><td class="path">/private/tmp/fx-demo/docs/backup/report-copy.txt</td><td class="reasons">组内已保留 report.txt；保留项更优：保留路径最短</td></tr><tr class="remove"><td><span class="tag remove">待清理</span></td><td>完全重复</td><td>renamed.txt<div class="muted">txt</div></td><td>1.13 KB</td><td class="muted">2026-10-03 14:57:19</td><td class="path">/private/tmp/fx-demo/docs/backup/renamed.txt</td><td class="reasons">组内已保留 report.txt；保留项更优：保留路径最短</td></tr><tr class="keep"><td><span class="tag keep">保留</span></td><td>完全重复</td><td>hardlink.txt<div class="muted">txt</div></td><td>1.13 KB</td><td class="muted">2026-10-03 14:57:19</td><td class="path">/private/tmp/fx-demo/docs/backup/hardlink.txt</td><td class="reasons">🔒 已保护：与组内其它条目指向同一物理文件（硬链接）；与组内其它条目指向同一物理文件（硬链接），删除不释放空间</td></tr><tr class="group-head"><td colspan="7">bundle.zip · 分组 587b808b · 可回收 1.05 KB</td></tr><tr class="keep"><td><span class="tag keep">保留</span></td><td>压缩包内重复</td><td>bundle.zip<div class="muted"></div></td><td>1.05 KB</td><td class="muted"></td><td class="path">/private/tmp/fx-demo/docs/bundle.zip</td><td class="reasons">保留原因：路径最短（默认兜底规则）</td></tr><tr class="remove"><td><span class="tag remove">待清理</span></td><td>压缩包内重复</td><td>bundle.zip<div class="muted"></div></td><td>1.05 KB</td><td class="muted"></td><td class="path">/private/tmp/fx-demo/docs/bundle.zip</td><td class="reasons">组内已保留 bundle.zip</td></tr><tr class="group-head"><td colspan="7">IMG_0001.CR2 · 分组 171d1064 · 可回收 0 B</td></tr><tr class="keep"><td><span class="tag keep">保留</span></td><td>RAW/JPEG 配对</td><td>IMG_0001.CR2<div class="muted">cr2</div></td><td>4.01 KB</td><td class="muted">2026-10-03 14:57:26</td><td class="path">/private/tmp/fx-demo/photos/2024/IMG_0001.CR2</td><td class="reasons">🔒 RAW 与 JPEG 是同一张照片的两种载体，整体保留</td></tr><tr class="keep"><td><span class="tag keep">保留</span></td><td>RAW/JPEG 配对</td><td>IMG_0001.JPG<div class="muted">jpg</div></td><td>10.05 KB</td><td class="muted">2026-10-03 14:57:26</td><td class="path">/private/tmp/fx-demo/photos/2024/IMG_0001.JPG</td><td class="reasons">🔒 RAW 与 JPEG 是同一张照片的两种载体，整体保留</td></tr></tbody>
+</table>
+
+<footer>
+  由 FileClean 生成 · 本报告仅作审计与人工复核用途，FileClean 不会依据报告自动执行任何删除。
+  
+</footer>
+
+<script>
+(function () {
+  var tbl = document.getElementById('tbl');
+  var q = document.getElementById('q');
+  var kind = document.getElementById('kind');
+  var decision = document.getElementById('decision');
+  var rows = Array.prototype.slice.call(tbl.tBodies[0].rows);
+
+  function refresh() {
+    var text = (q.value || '').toLowerCase();
+    var k = kind.value, d = decision.value;
+    var showGroup = true;
+    rows.forEach(function (r) {
+      if (r.classList.contains('group-head')) {
+        showGroup = true;
+        return;
+      }
+      var cells = r.cells;
+      var ok = true;
+      if (text && r.innerText.toLowerCase().indexOf(text) === -1) ok = false;
+      if (k && cells[1].innerText !== k) ok = false;
+      if (d && cells[0].innerText.trim() !== d) ok = false;
+      r.style.display = ok ? '' : 'none';
+      if (ok) showGroup = false;
+      r.dataset.hidden = ok ? '0' : '1';
+    });
+    // 分组标题在组内全被隐藏时一并隐藏
+    rows.forEach(function (r, i) {
+      if (!r.classList.contains('group-head')) return;
+      var visible = false;
+      for (var j = i + 1; j < rows.length; j++) {
+        if (rows[j].classList.contains('group-head')) break;
+        if (rows[j].dataset.hidden === '0') { visible = true; break; }
+      }
+      r.style.display = visible ? '' : 'none';
+    });
+  }
+
+  [q, kind, decision].forEach(function (el) { el.addEventListener('input', refresh); });
+
+  Array.prototype.forEach.call(tbl.tHead.rows[0].cells, function (th) {
+    th.addEventListener('click', function () {
+      var i = parseInt(th.dataset.i, 10);
+      var asc = th.dataset.asc !== '1';
+      th.dataset.asc = asc ? '1' : '0';
+      var sorted = rows.slice().sort(function (a, b) {
+        if (a.classList.contains('group-head') || b.classList.contains('group-head')) return 0;
+        var x = a.cells[i] ? a.cells[i].innerText : '';
+        var y = b.cells[i] ? b.cells[i].innerText : '';
+        return asc ? x.localeCompare(y, 'zh') : y.localeCompare(x, 'zh');
+      });
+      var body = tbl.tBodies[0];
+      sorted.forEach(function (r) { body.appendChild(r); });
+      refresh();
+    });
+  });
+})();
+</script>
+</body>
+</html>

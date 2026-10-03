@@ -1,0 +1,62 @@
+[package]
+name = "fileclean"
+version = "0.1.0"
+description = "FileClean — 重复文件扫描与安全清理工具"
+authors = ["PCXX"]
+edition = "2021"
+rust-version = "1.85"
+default-run = "fileclean"
+
+[lib]
+name = "fileclean_lib"
+crate-type = ["staticlib", "cdylib", "rlib"]
+
+[profile.release]
+codegen-units = 1
+lto = true
+opt-level = "s"
+panic = "abort"
+strip = true
+
+[dependencies]
+anyhow = "1.0.104"
+base64 = "0.23.1"
+blake3 = { version = "1.8.7", features = ["mmap", "rayon"] }
+chrono = { version = "0.4.45", features = ["serde"] }
+clap = { version = "4.5.61", features = ["derive"] }
+csv = "1.4.0"
+digest = "0.10.7"
+dotenvy = "0.15.7"
+flate2 = "1.1.10"
+globset = "0.4.19"
+hex = "0.4.3"
+image = "0.25.6"
+md-5 = "0.10.6"
+memmap2 = "0.9.11"
+parking_lot = "0.12.5"
+rayon = "1.10.0"
+rusqlite = { version = "0.40.2", features = ["bundled"] }
+rustfft = "6.4.1"
+serde = { version = "1.0.229", features = ["derive"] }
+serde_json = "1.0.151"
+sevenz-rust = "0.6.1"
+sha1 = "0.10.7"
+sha2 = "0.10.9"
+symphonia = { version = "0.5", features = ["mp3", "aac", "flac", "isomp4", "ogg", "vorbis", "wav", "pcm", "alac"] }
+tauri = { version = "2", features = [] }
+tauri-plugin-dialog = "2"
+tauri-plugin-opener = "2.5.5"
+thiserror = "2.0.21"
+tracing = "0.1.44"
+tracing-subscriber = { version = "0.3.23", features = ["json", "env-filter", "fmt"] }
+trash = "5.2.3"
+uuid = { version = "1.20.0", features = ["v4", "serde"] }
+walkdir = "2.5.0"
+xxhash-rust = { version = "0.8.19", features = ["xxh3"] }
+zip = "2"
+
+[build-dependencies]
+tauri-build = { version = "2", features = [] }
+
+[dev-dependencies]
+tempfile = "3.27.0"
