@@ -194,10 +194,17 @@ fn resolve_move_dir(plan: &ActionPlan, ctx: &ActionContext<'_>) -> AppResult<Pat
 
 /// 移入回收站。
 ///
-/// 首选 `trash` crate（走系统原生回收站）。但在**无 GUI 会话**中（CI/CD、SSH、
-/// 定时任务），macOS 的回收站实现要借道 Finder 自动化，会被 TCC 直接拒绝
-/// （`-10004 权限违例`）—— 而 CLI 恰恰就是为这类场景准备的。
-/// 因此失败时退化为「移动到用户回收站目录」：仍然可恢复，符合「默认不永久删除」的承诺。
+/// 显式指定了回收目录（`FILECLEAN_TRASH_DIR`）就完全不碰系统回收站：落点确定、
+/// 可读回，也是测试能把这一步完全沙箱化的唯一办法。
+///
+/// 未指定时：
+/// - **macOS 走 `NSFileManager` 的原生回收站 API（`trashItemAtURL`）**，不借道
+///   Finder/osascript。`trash` crate 的默认是 `DeleteMethod::Finder`，它会
+///   `osascript` 调 Finder 来删 —— 这正是「逐个文件播放系统删除音效、且更慢」的来源；
+///   `NsFileManager` 是进程内原生调用，无声且快。
+/// - 其它平台（Windows/Linux）走系统原生回收站，本身即静默、快速。
+///
+/// 任一路径失败都退化为「移动到用户回收站目录」，仍然可恢复，符合「默认不永久删除」。
 fn do_trash(path: &Path, explicit_dir: Option<&Path>) -> Result<Option<String>, String> {
     // 显式指定了回收目录就完全不碰系统回收站：落点确定、可读回，
     // 也是测试能把这一步完全沙箱化的唯一办法。
@@ -206,17 +213,47 @@ fn do_trash(path: &Path, explicit_dir: Option<&Path>) -> Result<Option<String>, 
         return Ok(Some(format!("已按指定回收目录放入 {dest}")));
     }
 
-    match trash::delete(path) {
-        Ok(()) => Ok(None),
-        Err(primary) => match fallback_trash(path) {
-            Ok(dest) => Ok(Some(format!(
-                "系统回收站不可用（{primary}），已改放入 {dest}"
-            ))),
-            Err(fallback_err) => Err(format!(
-                "移入回收站失败：{primary}；备用方案也失败：{fallback_err}"
-            )),
-        },
+    #[cfg(target_os = "macos")]
+    {
+        match macos_trash(path) {
+            Ok(()) => Ok(None),
+            Err(primary) => match fallback_trash(path) {
+                Ok(dest) => Ok(Some(format!(
+                    "系统回收站不可用（{primary}），已改放入 {dest}"
+                ))),
+                Err(fallback_err) => Err(format!(
+                    "移入回收站失败：{primary}；备用方案也失败：{fallback_err}"
+                )),
+            },
+        }
     }
+    #[cfg(not(target_os = "macos"))]
+    {
+        match trash::delete(path) {
+            Ok(()) => Ok(None),
+            Err(primary) => match fallback_trash(path) {
+                Ok(dest) => Ok(Some(format!(
+                    "系统回收站不可用（{primary}），已改放入 {dest}"
+                ))),
+                Err(fallback_err) => Err(format!(
+                    "移入回收站失败：{primary}；备用方案也失败：{fallback_err}"
+                )),
+            },
+        }
+    }
+}
+
+/// macOS 上用 `NSFileManager` 的原生回收站（`trashItemAtURL`）把文件移入废纸篓。
+///
+/// 关键：必须显式选 `DeleteMethod::NsFileManager`。`trash` crate 的默认是
+/// `DeleteMethod::Finder`，它 `osascript` 调 Finder 来删 —— 既逐个文件播放系统删除
+/// 音效、又慢。`NsFileManager` 是进程内原生调用，无声且快，也不要求 Finder 自动化授权。
+#[cfg(target_os = "macos")]
+fn macos_trash(path: &Path) -> Result<(), String> {
+    use trash::macos::TrashContextExtMacos;
+    let mut ctx = trash::TrashContext::new();
+    ctx.set_delete_method(trash::macos::DeleteMethod::NsFileManager);
+    ctx.delete(path).map_err(|e| e.to_string())
 }
 
 #[cfg(target_os = "macos")]
