@@ -2,6 +2,7 @@ import { useCallback, useEffect, useState } from 'react';
 
 import { Icon } from './Icon';
 import type { IconName } from './Icon';
+import { useI18n } from '../i18n';
 
 export interface ToastItem {
   id: number;
@@ -35,6 +36,7 @@ export function useToasts() {
 }
 
 function Toast({ item, onClose }: { item: ToastItem; onClose: () => void }) {
+  const { t } = useI18n();
   useEffect(() => {
     // 错误信息停留更久，用户需要时间读完。
     const timer = setTimeout(onClose, item.kind === 'error' ? 9000 : 4200);
@@ -47,7 +49,7 @@ function Toast({ item, onClose }: { item: ToastItem; onClose: () => void }) {
     <div className={`toast ${item.kind}`} role="status">
       <Icon name={icon} size={15} />
       <span>{item.message}</span>
-      <button className="close" onClick={onClose} title="关闭">
+      <button className="close" onClick={onClose} title={t('common.close')}>
         <Icon name="close" size={13} />
       </button>
     </div>

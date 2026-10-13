@@ -18,6 +18,7 @@ import { createRoot } from 'react-dom/client';
 import { mockIPC } from '@tauri-apps/api/mocks';
 
 import App from './App';
+import { t } from './i18n';
 import './styles.css';
 import type {
   AutoMarkConfig,
@@ -373,7 +374,7 @@ async function runDemo() {
   const { emit } = await import('@tauri-apps/api/event');
 
   const startButton = Array.from(document.querySelectorAll('button')).find((b) =>
-    b.textContent?.includes('开始扫描'),
+    b.textContent?.includes(t('btn.scan')),
   );
   if (!startButton) return;
   startButton.click();
@@ -399,7 +400,7 @@ createRoot(root).render(
 
 const params = new URLSearchParams(window.location.search);
 if (params.has('view')) {
-  const target = params.get('view') === 'settings' ? '扫描规则' : '扫描';
+  const target = params.get('view') === 'settings' ? t('nav.settings') : t('nav.scan');
   setTimeout(() => {
     Array.from(document.querySelectorAll('button'))
       .find((b) => b.textContent?.trim() === target)

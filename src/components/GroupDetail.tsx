@@ -1,16 +1,9 @@
 import { useEffect, useMemo, useState } from 'react';
 
 import { api, humanize } from '../api';
-import {
-  AUDIO_EXT,
-  DECISION_META,
-  IMAGE_EXT,
-  KIND_META,
-  baseName,
-  formatTime,
-  humanBytes,
-  percent,
-} from '../format';
+import { AUDIO_EXT, IMAGE_EXT, baseName, formatTime, humanBytes, percent } from '../format';
+import { kindMeta, decisionMeta } from '../i18n/meta';
+import { useI18n } from '../i18n';
 import type { AudioPreview, DuplicateFile, DuplicateGroup, MarkDecision, TextDiffPreview, ThumbnailPreview } from '../types';
 import { Icon } from './Icon';
 
@@ -107,6 +100,7 @@ function useAudio(path: string | null) {
 }
 
 function Spectrum({ preview, title }: { preview: AudioPreview | null; title: string }) {
+  const { t } = useI18n();
   if (!preview) return null;
   if (preview.error) {
     return (
@@ -123,7 +117,9 @@ function Spectrum({ preview, title }: { preview: AudioPreview | null; title: str
     <div className="preview-box">
       <div className="cap">
         <span>{title}</span>
-        <span>{preview.durationSecs.toFixed(1)} 秒 · 频谱轮廓</span>
+        <span>
+          {preview.durationSecs.toFixed(1)} {t('preview.spectrumNote')}
+        </span>
       </div>
       <div className="spectrum">
         {preview.bands.map((v, i) => (
@@ -143,6 +139,7 @@ function PreviewArea({
   selected: DuplicateFile;
   reference: DuplicateFile | null;
 }) {
+  const { t } = useI18n();
   const ext = selected.entry.extension.toLowerCase();
   const otherExt = reference?.entry.extension.toLowerCase() ?? '';
   const isImage = IMAGE_EXT.has(ext) && IMAGE_EXT.has(otherExt);
@@ -161,7 +158,7 @@ function PreviewArea({
     return (
       <div className="preview-box">
         <div className="cap">
-          <span>图像对比</span>
+          <span>{t('preview.imageCap')}</span>
           <span>
             {imageA.preview ? `${imageA.preview.width}×${imageA.preview.height}` : '—'} vs{' '}
             {imageB.preview ? `${imageB.preview.width}×${imageB.preview.height}` : '—'}
@@ -176,7 +173,7 @@ function PreviewArea({
                 <img src={side.preview.dataUrl} alt="" style={{ maxHeight: 210 }} />
               ) : (
                 <div className="hint" style={{ padding: 30 }}>
-                  {idx === 0 ? '（无对照文件）' : '加载中…'}
+                  {idx === 0 ? t('preview.noRef') : t('preview.loading')}
                 </div>
               )}
             </div>
@@ -189,7 +186,7 @@ function PreviewArea({
   if (isAudio) {
     return (
       <div style={{ display: 'grid', gap: 8 }}>
-        <Spectrum preview={audioA} title={leftPath ? baseName(leftPath) : '对照'} />
+        <Spectrum preview={audioA} title={leftPath ? baseName(leftPath) : t('preview.refLabel')} />
         <Spectrum preview={audioB} title={baseName(rightPath)} />
       </div>
     );
@@ -198,9 +195,9 @@ function PreviewArea({
   if (!leftPath) {
     return (
       <div className="preview-box">
-        <div className="cap">内容预览</div>
+        <div className="cap">{t('preview.contentCap')}</div>
         <div className="hint" style={{ padding: 8 }}>
-          该分组没有保留项作为对照，无法做差异对比。
+          {t('preview.noKeep')}
         </div>
       </div>
     );
@@ -209,9 +206,9 @@ function PreviewArea({
   if (!diff) {
     return (
       <div className="preview-box">
-        <div className="cap">内容对比</div>
+        <div className="cap">{t('preview.diffCap')}</div>
         <div className="hint" style={{ padding: 8 }}>
-          正在比较…
+          {t('preview.comparing')}
         </div>
       </div>
     );
@@ -220,26 +217,25 @@ function PreviewArea({
   return (
     <div className="preview-box">
       <div className="cap">
-        <span>{diff.binary ? '二进制文件对比' : '文本差异对比'}</span>
+        <span>{diff.binary ? t('preview.binaryCap') : t('preview.textCap')}</span>
         <span>
           {diff.identical
-            ? '内容完全一致'
+            ? t('preview.identical')
             : diff.firstDifferenceOffset != null
-              ? `首个差异位于第 ${diff.firstDifferenceOffset} 字节`
-              : '长度不同'}
+              ? t('preview.firstDiff', { n: diff.firstDifferenceOffset })
+              : t('preview.lengthDiff')}
         </span>
       </div>
       {diff.binary ? (
         <div className="hint" style={{ padding: 10 }}>
-          这两个文件是二进制内容，无法逐行展示差异。
-          {diff.identicalPrefixBytes > 0 &&
-            ` 前 ${humanBytes(diff.identicalPrefixBytes)} 完全一致。`}
-          {group.kind === 'exact' && ' 精确哈希已判定内容一致，可放心按规则清理。'}
+          {t('preview.binaryNote')}
+          {diff.identicalPrefixBytes > 0 && t('preview.prefixSame', { size: humanBytes(diff.identicalPrefixBytes) })}
+          {group.kind === 'exact' && t('preview.exactNote')}
         </div>
       ) : (
         <div className="diff">
-          <pre>{diff.leftSnippet || '（空）'}</pre>
-          <pre>{diff.rightSnippet || '（空）'}</pre>
+          <pre>{diff.leftSnippet || t('common.empty')}</pre>
+          <pre>{diff.rightSnippet || t('common.empty')}</pre>
         </div>
       )}
     </div>
@@ -257,6 +253,7 @@ export function GroupDetail({
   onRemoveArchiveEntries,
   onNotify,
 }: Props) {
+  const { t } = useI18n();
   const selected = useMemo(
     () => group.files.find((f) => f.entry.path === selectedPath) ?? group.files[0],
     [group, selectedPath],
@@ -267,7 +264,7 @@ export function GroupDetail({
     [group, selected],
   );
 
-  const kind = KIND_META[group.kind];
+  const kind = kindMeta(group.kind);
   const removable = group.files.filter((f) => f.decision === 'remove');
   const totalWaste = removable.reduce((sum, f) => sum + f.entry.size, 0);
 
@@ -277,9 +274,13 @@ export function GroupDetail({
         <h2 title={group.title}>{group.title || baseName(selected.entry.path)}</h2>
         <div className="row wrap" style={{ gap: 6 }}>
           <span className={`tag ${kind.tone}`}>{kind.label}</span>
-          <span className="tag">{group.files.length} 个文件</span>
-          {group.similarity != null && <span className="tag">相似度 {percent(group.similarity)}</span>}
-          {totalWaste > 0 && <span className="tag danger">可回收 {humanBytes(totalWaste)}</span>}
+          <span className="tag">{t('common.fileCount', { n: group.files.length })}</span>
+          {group.similarity != null && (
+            <span className="tag">{t('common.similarity', { pct: percent(group.similarity) })}</span>
+          )}
+          {totalWaste > 0 && (
+            <span className="tag danger">{t('detail.recyclable', { size: humanBytes(totalWaste) })}</span>
+          )}
         </div>
 
         {!group.informational && (
@@ -287,25 +288,25 @@ export function GroupDetail({
             <button
               className="btn sm"
               onClick={() => onSetGroupDecision('remove')}
-              title="保留每组首选，其余标记为待清理"
+              title={t('detail.keepOneTitle')}
             >
-              <Icon name="minus" size={13} /> 只留一份
+              <Icon name="minus" size={13} /> {t('detail.keepOne')}
             </button>
-            <button className="btn sm" onClick={onInvert} title="反向选择：首选改为清理，其余保留">
-              <Icon name="undo" size={13} /> 反向选择
+            <button className="btn sm" onClick={onInvert} title={t('detail.invertTitle')}>
+              <Icon name="undo" size={13} /> {t('btn.invert')}
             </button>
             <button className="btn sm" onClick={() => onSetGroupDecision('keep')}>
-              <Icon name="check" size={13} /> 全部保留
+              <Icon name="check" size={13} /> {t('detail.keepAll')}
             </button>
           </div>
         )}
 
         {group.kind === 'archiveInternal' && (
           <div className="alert info" style={{ marginTop: 10 }}>
-            这些条目位于压缩包内部。清理需要重写压缩包（会生成新的包体并原子替换原文件）。
+            {t('detail.archiveNote')}
             <div style={{ marginTop: 8 }}>
               <button className="btn sm" onClick={() => onRemoveArchiveEntries(group)}>
-                <Icon name="archive" size={13} /> 移除选中条目
+                <Icon name="archive" size={13} /> {t('detail.removeEntries')}
               </button>
             </div>
           </div>
@@ -313,7 +314,7 @@ export function GroupDetail({
 
         {group.informational && (
           <div className="alert info" style={{ marginTop: 10 }}>
-            RAW 与 JPEG 是同一张照片的两种载体，已作为整体保留，不参与清理。
+            {t('detail.pairNote')}
           </div>
         )}
       </div>
@@ -321,11 +322,11 @@ export function GroupDetail({
       <PreviewArea group={group} selected={selected} reference={reference} />
 
       <div style={{ padding: '8px 16px 4px' }} className="hint">
-        点击文件名可切换预览与对照；「清理 / 保留」按钮会即时更新标记。
+        {t('detail.clickHint')}
       </div>
 
       {group.files.map((file) => {
-        const meta = DECISION_META[file.decision];
+        const meta = decisionMeta(file.decision);
         const isSelected = file.entry.path === selected.entry.path;
         return (
           <div
@@ -339,7 +340,7 @@ export function GroupDetail({
               <span className="name" title={file.entry.path}>
                 {baseName(file.entry.path)}
               </span>
-              {file.isPreferred && <span className="tag accent">首选</span>}
+              {file.isPreferred && <span className="tag accent">{t('detail.preferred')}</span>}
               <span className={`tag ${meta.tone}`}>{meta.label}</span>
             </div>
 
@@ -349,8 +350,10 @@ export function GroupDetail({
 
             <div className="file-facts">
               <span>{humanBytes(file.entry.size)}</span>
-              <span>修改 {formatTime(file.entry.modified)}</span>
-              {file.entry.hardLinks > 1 && <span>硬链接 ×{file.entry.hardLinks}</span>}
+              <span>{t('detail.modified', { time: formatTime(file.entry.modified) })}</span>
+              {file.entry.hardLinks > 1 && (
+                <span>{t('detail.hardlinks', { n: file.entry.hardLinks })}</span>
+              )}
               {file.hash && (
                 <span title={file.hash} style={{ fontFamily: 'var(--mono)' }}>
                   {file.hash.slice(0, 12)}…
@@ -361,7 +364,7 @@ export function GroupDetail({
             {file.protected && (
               <div className="reasons">
                 <span className="tag warn">
-                  <Icon name="shield" size={11} /> {file.protected}
+                  <Icon name="shield" size={11} /> {t('detail.protected')}
                 </span>
               </div>
             )}
@@ -386,19 +389,19 @@ export function GroupDetail({
                   onSetFileDecision(file.entry.path, 'keep');
                 }}
               >
-                保留
+                {t('common.keep')}
               </button>
               <button
                 className="btn sm"
                 style={{ flex: '0 0 auto' }}
                 disabled={file.decision === 'remove' || !!file.protected || file.isSymlink}
-                title={file.protected ? `受保护：${file.protected}` : '标记为待清理'}
+                title={file.protected ? t('detail.protectedTitle', { reason: file.protected }) : t('detail.markRemove')}
                 onClick={(e) => {
                   e.stopPropagation();
                   onSetFileDecision(file.entry.path, 'remove');
                 }}
               >
-                清理
+                {t('common.clean')}
               </button>
               <button
                 className="btn ghost sm"
@@ -406,7 +409,7 @@ export function GroupDetail({
                   e.stopPropagation();
                   onReveal(file.entry.path);
                 }}
-                title="在文件管理器中显示"
+                title={t('detail.revealTitle')}
               >
                 <Icon name="folder" size={13} />
               </button>
@@ -421,11 +424,11 @@ export function GroupDetail({
           onClick={() => {
             navigator.clipboard
               .writeText(group.files.map((f) => f.entry.path).join('\n'))
-              .then(() => onNotify('success', `已复制 ${group.files.length} 条路径`))
+              .then(() => onNotify('success', t('msg.copiedPaths', { n: group.files.length })))
               .catch((e) => onNotify('error', humanize(e)));
           }}
         >
-          复制本组全部路径
+          {t('detail.copyPaths')}
         </button>
       </div>
     </div>

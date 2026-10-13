@@ -4,11 +4,13 @@ import type { ReactNode } from 'react';
 import type { AutoMarkConfig, ScanFilter, ScanOptions, SystemInfo } from '../types';
 import { Icon } from './Icon';
 import type { IconName } from './Icon';
+import { useI18n, type DictKey } from '../i18n';
 import { AlgorithmSettings } from './settings/AlgorithmSettings';
 import { FilterSettings } from './settings/FilterSettings';
 import { MarkingSettings } from './settings/MarkingSettings';
 import { PerformanceSettings } from './settings/PerformanceSettings';
 import { SafetySettings } from './settings/SafetySettings';
+import { AppearanceSettings } from './settings/AppearanceSettings';
 
 export type SettingsSection =
   | 'filter'
@@ -16,48 +18,51 @@ export type SettingsSection =
   | 'safety'
   | 'performance'
   | 'marking'
-  | 'session';
+  | 'session'
+  | 'appearance';
 
 interface NavItem {
   key: SettingsSection;
-  label: string;
+  labelKey: DictKey;
   icon: IconName;
-  desc: string;
+  descKey: DictKey;
 }
 
-/** 导航按「规则 → 安全性能 → 策略数据」三段组织，每段两个入口，避免一长条平铺。 */
-const NAV: Array<{ title: string; items: NavItem[] }> = [
+/** 导航分四段组织：扫描规则 / 安全性能 / 策略数据 / 外观。 */
+const NAV_GROUPS: Array<{ titleKey: DictKey; items: NavItem[] }> = [
   {
-    title: '扫描规则',
+    titleKey: 'navGrp.rules',
     items: [
-      { key: 'filter', label: '过滤条件', icon: 'filter', desc: '扩展名、体积、日期与排除规则' },
-      { key: 'algorithm', label: '匹配算法', icon: 'sliders', desc: '哈希算法与相似匹配开关' },
+      { key: 'filter', labelKey: 'nav.filter', icon: 'filter', descKey: 'nav.filterDesc' },
+      { key: 'algorithm', labelKey: 'nav.algorithm', icon: 'sliders', descKey: 'nav.algorithmDesc' },
     ],
   },
   {
-    title: '安全与性能',
+    titleKey: 'navGrp.safetyPerf',
     items: [
-      { key: 'safety', label: '安全与保护', icon: 'shield', desc: '系统保护锁与引用完整性检查' },
-      { key: 'performance', label: '性能与缓存', icon: 'gauge', desc: '并发线程、分组门槛与增量缓存' },
+      { key: 'safety', labelKey: 'nav.safety', icon: 'shield', descKey: 'nav.safetyDesc' },
+      {
+        key: 'performance',
+        labelKey: 'nav.performance',
+        icon: 'gauge',
+        descKey: 'nav.performanceDesc',
+      },
     ],
   },
   {
-    title: '策略与数据',
+    titleKey: 'navGrp.policyData',
     items: [
-      { key: 'marking', label: '智能保留策略', icon: 'check', desc: '规则链、保底份数与受保护文件' },
-      { key: 'session', label: '会话与导入导出', icon: 'save', desc: '保存、载入与导入导出会话' },
+      { key: 'marking', labelKey: 'nav.marking', icon: 'check', descKey: 'nav.markingDesc' },
+      { key: 'session', labelKey: 'nav.session', icon: 'save', descKey: 'nav.sessionDesc' },
+    ],
+  },
+  {
+    titleKey: 'nav.appearance',
+    items: [
+      { key: 'appearance', labelKey: 'nav.appearance', icon: 'palette', descKey: 'nav.appearanceDesc' },
     ],
   },
 ];
-
-const TITLES: Record<SettingsSection, string> = {
-  filter: '过滤条件',
-  algorithm: '匹配算法',
-  safety: '安全与保护',
-  performance: '性能与缓存',
-  marking: '智能保留策略',
-  session: '会话与导入导出',
-};
 
 interface Props {
   options: ScanOptions;
@@ -83,6 +88,7 @@ export function SettingsPage({
   onClearCache,
   sessionSlot,
 }: Props) {
+  const { t } = useI18n();
   const [active, setActive] = useState<SettingsSection>('filter');
 
   const patch = (value: Partial<ScanOptions>) => onOptions({ ...options, ...value });
@@ -90,16 +96,16 @@ export function SettingsPage({
     onOptions({ ...options, filter: { ...options.filter, ...value } });
 
   const activeItem = useMemo(
-    () => NAV.flatMap((g) => g.items).find((i) => i.key === active)!,
+    () => NAV_GROUPS.flatMap((g) => g.items).find((i) => i.key === active)!,
     [active],
   );
 
   return (
     <div className="settings">
       <nav className="settings-nav">
-        {NAV.map((group) => (
-          <div className="nav-group" key={group.title}>
-            <div className="nav-group-title">{group.title}</div>
+        {NAV_GROUPS.map((group) => (
+          <div className="nav-group" key={group.titleKey}>
+            <div className="nav-group-title">{t(group.titleKey)}</div>
             {group.items.map((item) => (
               <button
                 key={item.key}
@@ -108,8 +114,8 @@ export function SettingsPage({
               >
                 <Icon name={item.icon} size={15} />
                 <span className="nav-text">
-                  <span className="nav-label">{item.label}</span>
-                  <small>{item.desc}</small>
+                  <span className="nav-label">{t(item.labelKey)}</span>
+                  <small>{t(item.descKey)}</small>
                 </span>
               </button>
             ))}
@@ -118,7 +124,7 @@ export function SettingsPage({
 
         {running && (
           <div className="alert warn" style={{ margin: '12px 4px 0' }}>
-            扫描进行中，设置暂不可修改。
+            {t('settings.locked')}
           </div>
         )}
       </nav>
@@ -127,9 +133,9 @@ export function SettingsPage({
         <header className="pane-head">
           <div>
             <h2>
-              <Icon name={activeItem.icon} size={16} /> {TITLES[active]}
+              <Icon name={activeItem.icon} size={16} /> {t(activeItem.labelKey)}
             </h2>
-            <p className="hint">{activeItem.desc}</p>
+            <p className="hint">{t(activeItem.descKey)}</p>
           </div>
         </header>
 
@@ -141,12 +147,7 @@ export function SettingsPage({
             <AlgorithmSettings options={options} patch={patch} disabled={running} />
           )}
           {active === 'safety' && (
-            <SafetySettings
-              options={options}
-              patch={patch}
-              disabled={running}
-              systemInfo={systemInfo}
-            />
+            <SafetySettings options={options} patch={patch} disabled={running} systemInfo={systemInfo} />
           )}
           {active === 'performance' && (
             <PerformanceSettings
@@ -162,6 +163,7 @@ export function SettingsPage({
             <MarkingSettings markConfig={markConfig} onMarkConfig={onMarkConfig} />
           )}
           {active === 'session' && sessionSlot}
+          {active === 'appearance' && <AppearanceSettings />}
         </div>
       </section>
     </div>

@@ -1,4 +1,5 @@
 import { num } from '../../format';
+import { useI18n } from '../../i18n';
 import type { ScanOptions, SystemInfo } from '../../types';
 import { Icon } from '../Icon';
 
@@ -19,11 +20,13 @@ export function PerformanceSettings({
   onPickSaveDir,
   onClearCache,
 }: Props) {
+  const { t } = useI18n();
+
   return (
     <div className="settings-form">
       <div className="form-grid">
         <label className="field">
-          <span>并发线程数</span>
+          <span>{t('perf.threads')}</span>
           <div className="row">
             <input
               type="number"
@@ -34,16 +37,14 @@ export function PerformanceSettings({
               disabled={disabled}
             />
             <span className="hint">
-              0 = 自动（当前 {systemInfo?.effectiveThreads ?? '—'} 线程）
+              {t('perf.threadsAuto', { n: systemInfo?.effectiveThreads ?? '—' })}
             </span>
           </div>
-          <small className="hint">
-            自动值取逻辑核心数；机械盘上盲目调高反而会因寻道抖动而变慢
-          </small>
+          <small className="hint">{t('perf.threadsHint')}</small>
         </label>
 
         <label className="field">
-          <span>分组最少文件数</span>
+          <span>{t('perf.minGroup')}</span>
           <div className="row">
             <input
               type="number"
@@ -53,9 +54,9 @@ export function PerformanceSettings({
               onChange={(e) => patch({ minGroupSize: Math.max(2, Number(e.target.value) || 2) })}
               disabled={disabled}
             />
-            <span className="hint">份</span>
+            <span className="hint">{t('common.unit')}</span>
           </div>
-          <small className="hint">设为 3 可以只看「三胞胎以上」，过滤掉零散的两两重复</small>
+          <small className="hint">{t('perf.minGroupHint')}</small>
         </label>
       </div>
 
@@ -70,23 +71,20 @@ export function PerformanceSettings({
             disabled={disabled}
           />
           <span>
-            使用增量扫描缓存
-            <small>
-              已缓存 {num(systemInfo?.cacheEntries ?? 0)} 条指纹；只重算新增或已修改的文件
-            </small>
+            {t('perf.cache')}
+            <small>{t('perf.cacheHint', { n: num(systemInfo?.cacheEntries ?? 0) })}</small>
           </span>
         </label>
         <small className="hint" style={{ paddingLeft: 21 }}>
-          缓存以「路径 + 体积 + 修改时间 + inode」四元组判定是否失效，改过系统时间或伪造 mtime
-          都不会造成漏检。
+          {t('perf.cacheDetail')}
         </small>
 
         <div className="row" style={{ marginTop: 10 }}>
           <button className="btn sm" onClick={onClearCache} disabled={disabled}>
-            <Icon name="trash" size={13} /> 清空增量缓存
+            <Icon name="trash" size={13} /> {t('perf.clearCache')}
           </button>
           <button className="btn sm" onClick={onPickSaveDir}>
-            <Icon name="export" size={13} /> 打开导出目录
+            <Icon name="export" size={13} /> {t('perf.openExport')}
           </button>
         </div>
       </div>
@@ -94,18 +92,18 @@ export function PerformanceSettings({
       <div className="divider" />
 
       <div className="field">
-        <span>运行环境</span>
+        <span>{t('perf.env')}</span>
         <div className="kv-block">
           <div className="kv">
-            <span className="k">平台</span>
+            <span className="k">{t('kv.platform')}</span>
             <span className="v">
               {systemInfo ? `${systemInfo.platform} / ${systemInfo.arch}` : '—'}
             </span>
-            <span className="k">逻辑核心</span>
+            <span className="k">{t('kv.cores')}</span>
             <span className="v">{systemInfo ? num(systemInfo.logicalCores) : '—'}</span>
-            <span className="k">缓存条目</span>
+            <span className="k">{t('kv.cacheEntries')}</span>
             <span className="v">{systemInfo ? num(systemInfo.cacheEntries) : '—'}</span>
-            <span className="k">导出目录</span>
+            <span className="k">{t('kv.exportDir')}</span>
             <span className="v mono break">{systemInfo?.exportDir ?? '—'}</span>
           </div>
         </div>

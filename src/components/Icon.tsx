@@ -33,7 +33,8 @@ type IconName =
   | 'settings'
   | 'sliders'
   | 'gauge'
-  | 'refresh';
+  | 'refresh'
+  | 'palette';
 
 const PATHS: Record<IconName, string> = {
   image: 'M4 5h16v14H4zM4 15l4-4 4 4 3-3 5 5M9 9.5a1 1 0 1 0 0-.01',
@@ -68,6 +69,7 @@ const PATHS: Record<IconName, string> = {
   sliders: 'M4 6h10M18 6h2M4 12h4M12 12h8M4 18h12M20 18h0M14 4v4M8 10v4M16 16v4',
   gauge: 'M12 14l4-4M3.5 17a10 10 0 1 1 17 0M12 17h.01',
   refresh: 'M20 11a8 8 0 1 0-2.3 6M20 5v6h-6',
+  palette: 'M12 3a9 9 0 0 0 0 18c1 0 1.4-.8 1.4-1.7 0-.5-.2-.9-.5-1.2-.3-.3-.5-.7-.5-1.1A2.8 2.8 0 0 1 15.2 15H17a4 4 0 0 0 4-4c0-1.7-1.3-3-3-3h-1.5A5.5 5.5 0 0 0 12 3zM7.5 12a1 1 0 1 0 0-2 1 1 0 0 0 0 2zM12 7.5a1 1 0 1 0 0-2 1 1 0 0 0 0 2zM9 16.5a1 1 0 1 0 0-2 1 1 0 0 0 0 2z',
 };
 
 export function Icon({

@@ -33,6 +33,32 @@
   --mono: ui-monospace, SFMono-Regular, "SF Mono", Menlo, Consolas, monospace;
 }
 
+/* 暗色主题：JS 把 data-theme="dark" 写到 <html> 上时整站切换为这套变量。 */
+[data-theme='dark'] {
+  --bg: #0f1216;
+  --panel: #171b21;
+  --panel-2: #1b2027;
+  --panel-3: #21272f;
+  --line: #2a313b;
+  --line-strong: #3a434f;
+  --text: #e6e9ee;
+  --muted: #9aa4b2;
+  --muted-2: #6b7585;
+  --accent: #4d8bff;
+  --accent-hover: #6ba0ff;
+  --accent-soft: #16263f;
+  --accent-line: #1f3b66;
+  --danger: #ff6b6b;
+  --danger-soft: #2a1719;
+  --danger-line: #5c2b2e;
+  --ok: #4cc66e;
+  --ok-soft: #16271c;
+  --ok-line: #234a32;
+  --warn: #f0b429;
+  --warn-soft: #2a2310;
+  --warn-line: #5c4a1f;
+}
+
 * {
   box-sizing: border-box;
 }

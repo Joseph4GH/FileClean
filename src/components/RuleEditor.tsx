@@ -1,20 +1,21 @@
 import { useState } from 'react';
 
-import { ruleLabel } from '../format';
+import { ruleLabel } from '../i18n/meta';
+import { useI18n, type DictKey } from '../i18n';
 import type { AutoMarkConfig, MarkRule, MarkRuleEntry } from '../types';
 import { Icon } from './Icon';
 
-const RULE_TYPES: Array<{ type: MarkRule['type']; label: string; desc: string }> = [
-  { type: 'keepInPath', label: '优先保留指定目录', desc: '路径包含关键词的文件优先保留，例如「原片」' },
-  { type: 'preferExtension', label: '扩展名优先级', desc: '按顺序优先，例如 RAW > JPG' },
-  { type: 'keepOldestCreated', label: '保留最早创建', desc: '更接近原始文件' },
-  { type: 'keepNewest', label: '保留最新修改', desc: '适合保留最新修订版' },
-  { type: 'keepOldest', label: '保留最早修改', desc: '' },
-  { type: 'keepShortestPath', label: '保留路径最短', desc: '通常位于更靠上的原始目录' },
-  { type: 'keepLongestName', label: '保留文件名最长', desc: '' },
-  { type: 'keepShallowest', label: '保留层级最浅', desc: '' },
-  { type: 'keepLargest', label: '保留体积最大', desc: '相似图中即分辨率最高的' },
-  { type: 'keepMostLinked', label: '保留硬链接最多', desc: '被其它路径共用的更可能是源' },
+const RULE_TYPES: MarkRule['type'][] = [
+  'keepInPath',
+  'preferExtension',
+  'keepOldestCreated',
+  'keepNewest',
+  'keepOldest',
+  'keepShortestPath',
+  'keepLongestName',
+  'keepShallowest',
+  'keepLargest',
+  'keepMostLinked',
 ];
 
 export function RuleEditor({
@@ -24,6 +25,7 @@ export function RuleEditor({
   config: AutoMarkConfig;
   onChange: (next: AutoMarkConfig) => void;
 }) {
+  const { t } = useI18n();
   const [adding, setAdding] = useState(false);
 
   const update = (index: number, patch: Partial<MarkRuleEntry>) => {
@@ -54,13 +56,15 @@ export function RuleEditor({
     setAdding(false);
   };
 
+  const ruleTypeKey = (type: MarkRule['type']) => `rule.type.${type}` as DictKey;
+
   return (
     <div>
       <div className="hint" style={{ marginBottom: 8 }}>
-        规则按从上到下的优先级判定；上一条分出胜负就不再往下看。
+        {t('rule.orderHint')}
       </div>
 
-      {config.rules.length === 0 && <div className="hint">当前没有规则，将只按「路径最短」兜底。</div>}
+      {config.rules.length === 0 && <div className="hint">{t('rule.empty')}</div>}
 
       {config.rules.map((entry, index) => (
         <div className="rule-item" key={`${entry.rule.type}-${index}`}>
@@ -68,19 +72,19 @@ export function RuleEditor({
             type="checkbox"
             checked={entry.enabled}
             onChange={(e) => update(index, { enabled: e.target.checked })}
-            title="启用 / 停用"
+            title={t('rule.toggleTitle')}
           />
           <span className="idx">{index + 1}</span>
           <span className="label" title={ruleLabel(entry.rule as never)}>
             {ruleLabel(entry.rule as never)}
           </span>
-          <button className="btn ghost sm" onClick={() => move(index, -1)} title="上移">
+          <button className="btn ghost sm" onClick={() => move(index, -1)} title={t('rule.upTitle')}>
             <Icon name="up" size={13} />
           </button>
-          <button className="btn ghost sm" onClick={() => move(index, 1)} title="下移">
+          <button className="btn ghost sm" onClick={() => move(index, 1)} title={t('rule.downTitle')}>
             <Icon name="down" size={13} />
           </button>
-          <button className="btn ghost sm" onClick={() => remove(index)} title="删除">
+          <button className="btn ghost sm" onClick={() => remove(index)} title={t('common.delete')}>
             <Icon name="minus" size={13} />
           </button>
         </div>
@@ -90,14 +94,14 @@ export function RuleEditor({
         if (entry.rule.type === 'keepInPath') {
           return (
             <label className="field" key={`param-in-${index}`}>
-              <span>规则 {index + 1} · 目录关键词</span>
+              <span>{t('rule.inPathLabel', { n: index + 1 })}</span>
               <input
                 type="text"
                 value={entry.rule.pattern}
                 onChange={(e) =>
                   update(index, { rule: { type: 'keepInPath', pattern: e.target.value } })
                 }
-                placeholder="例如：原片 / RAW / Masters"
+                placeholder={t('rule.inPathPh')}
               />
             </label>
           );
@@ -105,7 +109,7 @@ export function RuleEditor({
         if (entry.rule.type === 'preferExtension') {
           return (
             <label className="field" key={`param-ext-${index}`}>
-              <span>规则 {index + 1} · 扩展名优先级（逗号分隔，靠前优先）</span>
+              <span>{t('rule.extLabel', { n: index + 1 })}</span>
               <input
                 type="text"
                 value={entry.rule.extensions.join(', ')}
@@ -120,7 +124,7 @@ export function RuleEditor({
                     },
                   })
                 }
-                placeholder="cr2, cr3, nef, arw, dng"
+                placeholder={t('rule.extPh')}
               />
             </label>
           );
@@ -130,34 +134,38 @@ export function RuleEditor({
 
       {adding ? (
         <div className="card" style={{ marginTop: 8 }}>
-          {RULE_TYPES.map((t) => (
+          {RULE_TYPES.map((type) => (
             <div
-              key={t.type}
+              key={type}
               className="rule-item"
               style={{ cursor: 'pointer' }}
-              onClick={() => add(t.type)}
+              onClick={() => add(type)}
             >
               <span className="label">
-                {t.label}
-                {t.desc && <small className="hint" style={{ display: 'block' }}>{t.desc}</small>}
+                {t(ruleTypeKey(type))}
+                {t(`rule.type.${type}.desc` as DictKey) && (
+                  <small className="hint" style={{ display: 'block' }}>
+                    {t(`rule.type.${type}.desc` as DictKey)}
+                  </small>
+                )}
               </span>
               <Icon name="plus" size={13} />
             </div>
           ))}
           <button className="btn block sm" onClick={() => setAdding(false)}>
-            取消
+            {t('common.cancel')}
           </button>
         </div>
       ) : (
         <button className="btn block sm" onClick={() => setAdding(true)}>
-          <Icon name="plus" size={13} /> 添加规则
+          <Icon name="plus" size={13} /> {t('rule.add')}
         </button>
       )}
 
       <div className="divider" />
 
       <label className="field">
-        <span>每组至少保留</span>
+        <span>{t('rule.keepMin')}</span>
         <div className="row">
           <input
             type="number"
@@ -168,7 +176,7 @@ export function RuleEditor({
               onChange({ ...config, keepPerGroup: Math.max(1, Number(e.target.value) || 1) })
             }
           />
-          <span className="hint">份（保底，绝不会清空整组）</span>
+          <span className="hint">{t('rule.keepMinHint')}</span>
         </div>
       </label>
 
@@ -179,8 +187,8 @@ export function RuleEditor({
           onChange={(e) => onChange({ ...config, neverDeleteProtected: e.target.checked })}
         />
         <span>
-          受保护文件永不标记删除
-          <small>被素材库引用、硬链接同源、RAW/JPEG 配对成员</small>
+          {t('rule.neverProtected')}
+          <small>{t('rule.neverProtectedHint')}</small>
         </span>
       </label>
 
@@ -191,8 +199,8 @@ export function RuleEditor({
           onChange={(e) => onChange({ ...config, alsoMarkSimilar: e.target.checked })}
         />
         <span>
-          相似组也自动标记
-          <small>默认关闭：图片/音频相似组建议人工确认后再清理</small>
+          {t('rule.alsoSimilar')}
+          <small>{t('rule.alsoSimilarHint')}</small>
         </span>
       </label>
     </div>

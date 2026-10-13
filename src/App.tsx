@@ -3,6 +3,8 @@ import { save } from '@tauri-apps/plugin-dialog';
 
 import { api, humanize, onProgress, onScanDone, onScanError } from './api';
 import { formatDuration, humanBytes, num, shortPath } from './format';
+import { I18nProvider, useI18n, getLocale } from './i18n';
+import { ThemeProvider } from './theme';
 import type {
   ActionResult,
   AutoMarkConfig,
@@ -28,8 +30,8 @@ import { Toasts, useToasts } from './components/Toasts';
 type SortKey = 'waste' | 'count' | 'name';
 type View = 'scan' | 'settings';
 
-export default function App() {
-  const { toasts, dismiss, info, success, error } = useToasts();
+function AppBody() {
+  const { toasts, dismiss, info, success, error, t } = useToastsWithI18n();
 
   const [systemInfo, setSystemInfo] = useState<SystemInfo | null>(null);
   const [options, setOptions] = useState<ScanOptions | null>(null);
@@ -52,7 +54,7 @@ export default function App() {
   const [exportFormat, setExportFormat] = useState<ExportFormat>('html');
   const [lastJournal, setLastJournal] = useState<string | null>(null);
 
-  /** 主界面 = 扫描工作台；设置页承载全部扫描规则。 */
+  /** 主界面 = 扫描工作台；设置页承载全部扫描规则与外观偏好。 */
   const [view, setView] = useState<View>('scan');
 
   const scanIdRef = useRef<string | null>(null);
@@ -73,7 +75,7 @@ export default function App() {
         setOptions(opts);
         setMarkConfig(marks);
       } catch (e) {
-        error(`初始化失败：${humanize(e)}`);
+        error(t('msg.initFailed', { detail: humanize(e) }));
       }
     })();
     return () => {
@@ -102,12 +104,13 @@ export default function App() {
           setSelectedGroupId(full.groups[0]?.id ?? null);
           setSelectedPath(full.groups[0]?.files[0]?.entry.path ?? null);
           if (full.groups.length === 0) {
-            info('扫描完成：没有发现重复文件');
+            info(t('empty.noResult'));
           } else {
             success(
-              `扫描完成：${num(full.stats.groups)} 个分组，可回收 ${humanBytes(
-                full.stats.wastedBytes,
-              )}`,
+              t('msg.scanDone', {
+                groups: num(full.stats.groups),
+                size: humanBytes(full.stats.wastedBytes),
+              }),
             );
           }
         } catch (e) {
@@ -133,13 +136,13 @@ export default function App() {
       disposed = true;
       unlisteners.forEach((off) => off());
     };
-  }, [info, success, error]);
+  }, [info, success, error, t]);
 
   // ---------------- 操作 ----------------
   const startScan = useCallback(async () => {
     if (!options || !markConfig) return;
     if (options.roots.length === 0) {
-      error('请先添加至少一个扫描目录');
+      error(t('btn.scanDisabledHint'));
       return;
     }
     try {
@@ -151,23 +154,23 @@ export default function App() {
       const id = await api.startScan(options, markConfig);
       setScanId(id);
       scanIdRef.current = id;
-      info('扫描已启动');
+      info(t('btn.scanTitle'));
     } catch (e) {
       setStatus('failed');
       error(humanize(e));
     }
-  }, [options, markConfig, error, info]);
+  }, [options, markConfig, error, info, t]);
 
   const cancelScan = useCallback(async () => {
     if (!scanId) return;
     try {
       await api.cancelScan(scanId);
       setStatus('cancelled');
-      info('已请求取消扫描');
+      info(t('progress.cancelled'));
     } catch (e) {
       error(humanize(e));
     }
-  }, [scanId, error, info]);
+  }, [scanId, error, info, t]);
 
   const applyResult = useCallback((next: ScanResult) => {
     setResult(next);
@@ -206,12 +209,12 @@ export default function App() {
       if (!scanId) return;
       try {
         applyResult(await api.invertGroup(scanId, groupId));
-        info('已执行反向选择');
+        info(t('btn.invert'));
       } catch (e) {
         error(humanize(e));
       }
     },
-    [scanId, applyResult, error, info],
+    [scanId, applyResult, error, info, t],
   );
 
   const reveal = useCallback(
@@ -230,7 +233,7 @@ export default function App() {
     try {
       const stamp = new Date().toISOString().slice(0, 19).replace(/[:T]/g, '-');
       const target = await save({
-        title: '导出重复文件报告',
+        title: t('btn.exportReport'),
         defaultPath: `fileclean-report-${stamp}.${exportFormat}`,
         filters: [{ name: exportFormat.toUpperCase(), extensions: [exportFormat] }],
       });
@@ -238,12 +241,12 @@ export default function App() {
       if (!target) return;
 
       const summary = await api.exportReport(scanId, exportFormat, target);
-      success(`报告已导出：${summary.path}`);
+      success(t('msg.reportExported', { path: summary.path }));
       await api.revealInFinder(summary.path);
     } catch (e) {
       error(humanize(e));
     }
-  }, [scanId, exportFormat, success, error]);
+  }, [scanId, exportFormat, success, error, t]);
 
   const removeArchiveEntries = useCallback(
     async (group: DuplicateGroup) => {
@@ -251,19 +254,19 @@ export default function App() {
         .filter((f) => f.decision === 'remove' && f.archiveInnerPath)
         .map((f) => f.archiveInnerPath as string);
       if (paths.length === 0) {
-        info('没有标记为待清理的压缩包条目');
+        info(t('detail.archiveNote'));
         return;
       }
       const archivePath = group.files[0]?.entry.path;
       if (!archivePath) return;
       try {
         const removed = await api.removeArchiveEntries(archivePath, paths, true);
-        success(`已从压缩包中移除 ${removed} 个条目`);
+        success(t('msg.archiveEntriesRemoved', { n: removed }));
       } catch (e) {
         error(humanize(e));
       }
     },
-    [info, success, error],
+    [info, success, error, t],
   );
 
   const undo = useCallback(async () => {
@@ -281,12 +284,12 @@ export default function App() {
   const clearCache = useCallback(async () => {
     try {
       const removed = await api.clearCache();
-      success(`已清空 ${num(removed)} 条增量缓存`);
+      success(t('msg.cacheCleared', { n: num(removed) }));
       setSystemInfo(await api.systemInfo());
     } catch (e) {
       error(humanize(e));
     }
-  }, [success, error]);
+  }, [success, error, t]);
 
   const openExportDir = useCallback(async () => {
     if (!systemInfo) return;
@@ -328,7 +331,7 @@ export default function App() {
     const sorted = [...list];
     if (sortKey === 'waste') sorted.sort((a, b) => b.wastedBytes - a.wastedBytes);
     else if (sortKey === 'count') sorted.sort((a, b) => b.files.length - a.files.length);
-    else sorted.sort((a, b) => a.title.localeCompare(b.title, 'zh'));
+    else sorted.sort((a, b) => a.title.localeCompare(b.title, getLocale() === 'zh' ? 'zh' : 'en'));
     return sorted;
   }, [result, query, kindFilter, decisionFilter, sortKey]);
 
@@ -355,7 +358,7 @@ export default function App() {
         <div className="brand">
           <span className="dot" />
           FileClean
-          <small>重复文件扫描与安全清理</small>
+          <small>{t('app.subtitle')}</small>
         </div>
 
         <nav className="seg">
@@ -363,13 +366,13 @@ export default function App() {
             className={`seg-item${view === 'scan' ? ' active' : ''}`}
             onClick={() => setView('scan')}
           >
-            <Icon name="search" size={13} /> 扫描
+            <Icon name="search" size={13} /> {t('nav.scan')}
           </button>
           <button
             className={`seg-item${view === 'settings' ? ' active' : ''}`}
             onClick={() => setView('settings')}
           >
-            <Icon name="settings" size={13} /> 扫描规则
+            <Icon name="settings" size={13} /> {t('nav.settings')}
           </button>
         </nav>
 
@@ -377,13 +380,16 @@ export default function App() {
 
         {systemInfo && view === 'scan' && (
           <span className="hint">
-            {systemInfo.logicalCores} 核 · 缓存 {num(systemInfo.cacheEntries)} 条
+            {t('topbar.envHint', {
+              cores: systemInfo.logicalCores,
+              n: num(systemInfo.cacheEntries),
+            })}
           </span>
         )}
 
         {view === 'scan' && lastJournal && (
           <button className="btn sm" onClick={undo}>
-            <Icon name="undo" size={13} /> 撤销上次隔离
+            <Icon name="undo" size={13} /> {t('btn.undo')}
           </button>
         )}
 
@@ -393,9 +399,9 @@ export default function App() {
               className="btn sm"
               onClick={exportReport}
               disabled={!result || result.groups.length === 0}
-              title="导出 CSV / HTML / XML / JSON 报告"
+              title={t('btn.exportReport')}
             >
-              <Icon name="export" size={13} /> 导出报告
+              <Icon name="export" size={13} /> {t('btn.exportReport')}
             </button>
             <select
               value={exportFormat}
@@ -413,9 +419,9 @@ export default function App() {
               className="btn danger sm"
               onClick={() => setShowAction(true)}
               disabled={!result || dirtyGroups.length === 0 || running}
-              title={dirtyGroups.length === 0 ? '没有待清理的文件' : '执行清理'}
+              title={dirtyGroups.length === 0 ? t('btn.cleanEmptyHint') : t('btn.cleanTitle')}
             >
-              <Icon name="trash" size={13} /> 执行清理
+              <Icon name="trash" size={13} /> {t('btn.clean')}
             </button>
           </>
         )}
@@ -443,7 +449,7 @@ export default function App() {
               }
             />
           ) : (
-            <div className="sidebar hint">正在加载配置…</div>
+            <div className="sidebar hint">{t('settings.loadingConfig')}</div>
           )}
         </div>
       ) : (
@@ -460,47 +466,47 @@ export default function App() {
               onOpenSettings={() => setView('settings')}
             />
           ) : (
-            <div className="sidebar hint">正在加载配置…</div>
+            <div className="sidebar hint">{t('settings.loadingConfig')}</div>
           )}
 
           <div className="main">
             {stats && (
               <div className="statsbar">
                 <div className="stat">
-                  <div className="k">可回收空间</div>
+                  <div className="k">{t('stat.kWaste')}</div>
                   <div className="v danger">{humanBytes(stats.wastedBytes)}</div>
                 </div>
                 <div className="stat">
-                  <div className="k">重复分组</div>
+                  <div className="k">{t('stat.kGroups')}</div>
                   <div className="v">{num(stats.groups)}</div>
                 </div>
                 <div className="stat">
-                  <div className="k">待清理文件</div>
+                  <div className="k">{t('stat.kDupFiles')}</div>
                   <div className="v">{num(stats.duplicateFiles)}</div>
                 </div>
                 <div className="stat">
-                  <div className="k">受保护</div>
+                  <div className="k">{t('stat.kProtected')}</div>
                   <div className="v ok">{num(stats.protectedFiles)}</div>
                 </div>
                 <div className="stat">
-                  <div className="k">扫描文件</div>
+                  <div className="k">{t('stat.kFilesSeen')}</div>
                   <div className="v">{num(stats.filesSeen)}</div>
                 </div>
                 <div className="stat">
-                  <div className="k">参与哈希</div>
+                  <div className="k">{t('stat.kFilesScanned')}</div>
                   <div className="v">{num(stats.filesScanned)}</div>
                 </div>
                 <div className="stat">
-                  <div className="k">缓存命中</div>
+                  <div className="k">{t('stat.kCacheHits')}</div>
                   <div className="v">{num(stats.cacheHits)}</div>
                 </div>
                 <div className="stat">
-                  <div className="k">耗时</div>
+                  <div className="k">{t('stat.kDuration')}</div>
                   <div className="v">{formatDuration(stats.durationMs)}</div>
                 </div>
                 {stats.protectedDirsSkipped > 0 && (
                   <div className="stat">
-                    <div className="k">保护目录跳过</div>
+                    <div className="k">{t('stat.kProtectedDirs')}</div>
                     <div className="v">{num(stats.protectedDirsSkipped)}</div>
                   </div>
                 )}
@@ -511,7 +517,7 @@ export default function App() {
               <Icon name="search" size={14} />
               <input
                 type="text"
-                placeholder="按路径 / 文件名过滤…"
+                placeholder={t('toolbar.searchPlaceholder')}
                 value={query}
                 onChange={(e) => setQuery(e.target.value)}
               />
@@ -519,37 +525,42 @@ export default function App() {
                 value={kindFilter}
                 onChange={(e) => setKindFilter(e.target.value as MatchKind | '')}
               >
-                <option value="">全部类型</option>
-                <option value="exact">完全重复</option>
-                <option value="perceptual">图片相似</option>
-                <option value="audio">音频相似</option>
-                <option value="archiveInternal">压缩包内</option>
-                <option value="rawJpegPair">RAW/JPEG 配对</option>
+                <option value="">{t('filter.allTypes')}</option>
+                <option value="exact">{t('kind.exact')}</option>
+                <option value="perceptual">{t('kind.perceptual')}</option>
+                <option value="audio">{t('kind.audio')}</option>
+                <option value="archiveInternal">{t('kind.archiveInternal')}</option>
+                <option value="rawJpegPair">{t('kind.rawJpegPair')}</option>
               </select>
               <select
                 value={decisionFilter}
                 onChange={(e) => setDecisionFilter(e.target.value as typeof decisionFilter)}
               >
-                <option value="all">全部决策</option>
-                <option value="remove">仅待清理</option>
-                <option value="protected">仅受保护</option>
+                <option value="all">{t('filter.allDecisions')}</option>
+                <option value="remove">{t('filter.onlyRemove')}</option>
+                <option value="protected">{t('filter.onlyProtected')}</option>
               </select>
               <select value={sortKey} onChange={(e) => setSortKey(e.target.value as SortKey)}>
-                <option value="waste">按可回收空间</option>
-                <option value="count">按文件数</option>
-                <option value="name">按文件名</option>
+                <option value="waste">{t('sort.waste')}</option>
+                <option value="count">{t('sort.count')}</option>
+                <option value="name">{t('sort.name')}</option>
               </select>
               <div className="spacer" />
               <span className="hint">
-                {result ? `${num(filteredGroups.length)} / ${num(result.groups.length)} 个分组` : '尚未扫描'}
+                {result
+                  ? t('toolbar.groupCount', {
+                      shown: num(filteredGroups.length),
+                      total: num(result.groups.length),
+                    })
+                  : t('toolbar.noScan')}
               </span>
               <button
                 className="btn sm"
                 onClick={() => invert(null)}
                 disabled={!result || running}
-                title="全局反向选择"
+                title={t('btn.invertTitle')}
               >
-                反向选择
+                {t('btn.invert')}
               </button>
               {result && (
                 <button
@@ -558,14 +569,14 @@ export default function App() {
                     if (!scanId || !markConfig) return;
                     try {
                       applyResult(await api.applyAutoMark(scanId, markConfig));
-                      success('已按当前保留策略重新标记');
+                      success(t('msg.reapplied'));
                     } catch (e) {
                       error(humanize(e));
                     }
                   }}
                   disabled={running}
                 >
-                  重新应用策略
+                  {t('btn.reapply')}
                 </button>
               )}
             </div>
@@ -603,14 +614,14 @@ export default function App() {
                     <span className="big">
                       <Icon name="filter" size={30} />
                     </span>
-                    <div>{result ? '从左侧选择一个分组查看详情' : '还没有扫描结果'}</div>
+                    <div>{result ? t('empty.selectGroup') : t('empty.noResult')}</div>
                     <div className="hint">
                       {result
-                        ? '详情面板支持图片对比、文本差异对比与音频频谱预览'
-                        : '在左侧选择目录并点击「开始扫描」'}
+                        ? t('empty.detailHint')
+                        : t('empty.noScanHint')}
                     </div>
                     {result?.groups.length === 0 && (
-                      <div className="hint">本次扫描未发现重复文件，可以尝试开启感知哈希或放宽过滤条件。</div>
+                      <div className="hint">{t('empty.noDupHint')}</div>
                     )}
                   </div>
                 </div>
@@ -624,16 +635,18 @@ export default function App() {
         <div className="progress-head">
           <span className="phase">
             {status === 'done'
-              ? '已完成'
+              ? t('progress.done')
               : status === 'cancelled'
-                ? '已取消'
+                ? t('progress.cancelled')
                 : status === 'failed'
-                  ? '失败'
+                  ? t('progress.failed')
                   : running
-                    ? (progress?.phaseLabel ?? '准备中')
-                    : '就绪'}
+                    ? (progress?.phaseLabel ?? t('progress.preparing'))
+                    : t('progress.ready')}
           </span>
-          <span className="msg">{progress?.message ?? '选择目录后开始扫描'}</span>
+          <span className="msg">
+            {progress?.message ?? (running ? '' : t('progress.readyMsg'))}
+          </span>
           <span className="pct">{progress ? `${(progress.percent * 100).toFixed(0)}%` : ''}</span>
         </div>
         <div className="progress-track">
@@ -660,4 +673,21 @@ export default function App() {
       <Toasts items={toasts} onDismiss={dismiss} />
     </div>
   );
+}
+
+export default function App() {
+  return (
+    <I18nProvider>
+      <ThemeProvider>
+        <AppBody />
+      </ThemeProvider>
+    </I18nProvider>
+  );
+}
+
+// 把 i18n 的 t 接入 useToasts 的返回，避免每个 toast 文案在调用点重复拼接。
+function useToastsWithI18n() {
+  const base = useToasts();
+  const { t } = useI18n();
+  return { ...base, t };
 }

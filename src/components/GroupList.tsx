@@ -1,7 +1,9 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 
 import { cachedThumbnail, getThumbnail } from '../thumbnails';
-import { IMAGE_EXT, KIND_META, baseName, humanBytes, num, percent, parentDir, shortPath } from '../format';
+import { IMAGE_EXT, baseName, humanBytes, num, parentDir, percent, shortPath } from '../format';
+import { kindMeta } from '../i18n/meta';
+import { useI18n } from '../i18n';
 import type { DuplicateGroup } from '../types';
 import { Icon } from './Icon';
 
@@ -45,7 +47,8 @@ function GroupRow({
   selected: boolean;
   onSelect: () => void;
 }) {
-  const kind = KIND_META[group.kind];
+  const { t } = useI18n();
+  const kind = kindMeta(group.kind);
   const removable = group.files.filter((f) => f.decision === 'remove').length;
   const thumbFile = group.files[0];
 
@@ -68,14 +71,16 @@ function GroupRow({
         <div className="group-title">{group.title || baseName(thumbFile?.entry.path ?? '')}</div>
         <div className="group-meta">
           <span className={`tag ${kind.tone}`}>{kind.label}</span>
-          <span>{group.files.length} 个文件</span>
-          {group.similarity != null && <span>相似度 {percent(group.similarity)}</span>}
+          <span>{t('common.fileCount', { n: group.files.length })}</span>
+          {group.similarity != null && (
+            <span>{t('common.similarity', { pct: percent(group.similarity) })}</span>
+          )}
           {group.files.some((f) => f.protected) && (
             <span className="tag warn">
-              <Icon name="shield" size={11} /> 含保护
+              <Icon name="shield" size={11} /> {t('list.protected')}
             </span>
           )}
-          {removable > 0 && <span className="tag danger">{removable} 待清理</span>}
+          {removable > 0 && <span className="tag danger">{t('list.removable', { n: removable })}</span>}
         </div>
         <div className="hint" title={thumbFile?.entry.path} style={{ marginTop: 1 }}>
           {shortPath(parentDir(thumbFile?.entry.path ?? ''), 68)}
@@ -84,7 +89,7 @@ function GroupRow({
 
       <div className="group-right">
         <div className="waste">{group.wastedBytes > 0 ? humanBytes(group.wastedBytes) : '—'}</div>
-        <div className="n">共 {humanBytes(group.totalBytes)}</div>
+        <div className="n">{t('common.totalSize', { size: humanBytes(group.totalBytes) })}</div>
       </div>
     </div>
   );
@@ -99,6 +104,7 @@ export function GroupList({
   selectedId: string | null;
   onSelect: (id: string) => void;
 }) {
+  const { t } = useI18n();
   const containerRef = useRef<HTMLDivElement | null>(null);
   const [scrollTop, setScrollTop] = useState(0);
   const [viewport, setViewport] = useState(600);
@@ -129,8 +135,8 @@ export function GroupList({
           <span className="big">
             <Icon name="search" size={30} />
           </span>
-          <div>没有符合当前条件的重复分组</div>
-          <div className="hint">试着放宽过滤条件，或开启「图片感知哈希」查找相似文件</div>
+          <div>{t('list.empty')}</div>
+          <div className="hint">{t('list.emptyHint')}</div>
         </div>
       </div>
     );
@@ -162,11 +168,10 @@ export function GroupList({
         </div>
       </div>
       <div className="hint" style={{ padding: '6px 16px 12px' }}>
-        共 {num(groups.length)} 个分组
+        {t('list.count', { n: num(groups.length) })}
         {groups.length > 0 && (
           <>
-            {' · '}
-            可回收 {humanBytes(groups.reduce((sum, g) => sum + g.wastedBytes, 0))}
+            {t('list.countWaste', { size: humanBytes(groups.reduce((sum, g) => sum + g.wastedBytes, 0)) })}
           </>
         )}
       </div>

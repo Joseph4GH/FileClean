@@ -1,4 +1,5 @@
 import { humanBytes } from '../../format';
+import { useI18n } from '../../i18n';
 import type { ScanFilter, ScanOptions } from '../../types';
 import { Icon } from '../Icon';
 
@@ -32,33 +33,34 @@ function parseExts(value: string): string[] {
 }
 
 export function FilterSettings({ options, patchFilter, disabled }: Props) {
+  const { t } = useI18n();
   const f = options.filter;
 
   return (
     <div className="settings-form">
       <div className="form-grid">
         <label className="field">
-          <span>仅扫描这些扩展名</span>
+          <span>{t('filter.onlyExt')}</span>
           <input
             type="text"
             value={f.includeExtensions.join(', ')}
             onChange={(e) => patchFilter({ includeExtensions: parseExts(e.target.value) })}
-            placeholder="jpg, png, mp4"
+            placeholder={t('filter.onlyExtPh')}
             disabled={disabled}
           />
-          <small className="hint">逗号分隔，留空表示不限制类型</small>
+          <small className="hint">{t('filter.onlyExtHint')}</small>
         </label>
 
         <label className="field">
-          <span>排除这些扩展名</span>
+          <span>{t('filter.excludeExt')}</span>
           <input
             type="text"
             value={f.excludeExtensions.join(', ')}
             onChange={(e) => patchFilter({ excludeExtensions: parseExts(e.target.value) })}
-            placeholder="iso, dmg"
+            placeholder={t('filter.excludeExtPh')}
             disabled={disabled}
           />
-          <small className="hint">白名单与黑名单同时存在时，黑名单优先</small>
+          <small className="hint">{t('filter.excludeExtHint')}</small>
         </label>
       </div>
 
@@ -66,7 +68,7 @@ export function FilterSettings({ options, patchFilter, disabled }: Props) {
 
       <div className="form-grid">
         <label className="field">
-          <span>最小体积</span>
+          <span>{t('filter.minSize')}</span>
           <div className="row">
             <input
               type="number"
@@ -77,14 +79,14 @@ export function FilterSettings({ options, patchFilter, disabled }: Props) {
               disabled={disabled}
             />
             <span className="hint">
-              {f.minSize > 0 ? humanBytes(f.minSize) : '不限制'}（字节）
+              {f.minSize > 0 ? t('filter.sizeVal', { size: humanBytes(f.minSize) }) : t('common.unlimited')}
             </span>
           </div>
-          <small className="hint">小于该体积的文件直接跳过，用于滤掉图标、缩略图等小文件</small>
+          <small className="hint">{t('filter.minSizeHint')}</small>
         </label>
 
         <label className="field">
-          <span>最大体积</span>
+          <span>{t('filter.maxSize')}</span>
           <div className="row">
             <input
               type="number"
@@ -98,16 +100,16 @@ export function FilterSettings({ options, patchFilter, disabled }: Props) {
               disabled={disabled}
             />
             <span className="hint">
-              {f.maxSize ? humanBytes(f.maxSize) : '不限制'}（0 = 不限）
+              {f.maxSize ? t('filter.sizeVal', { size: humanBytes(f.maxSize) }) : t('filter.maxSizeZero')}
             </span>
           </div>
-          <small className="hint">体积预筛的第一道闸门，超出范围的文件不会参与哈希</small>
+          <small className="hint">{t('filter.maxSizeHint')}</small>
         </label>
       </div>
 
       <div className="form-grid">
         <label className="field">
-          <span>修改时间晚于</span>
+          <span>{t('filter.modAfter')}</span>
           <input
             type="date"
             value={fromUnixSeconds(f.modifiedAfter)}
@@ -117,21 +119,21 @@ export function FilterSettings({ options, patchFilter, disabled }: Props) {
         </label>
 
         <label className="field">
-          <span>修改时间早于</span>
+          <span>{t('filter.modBefore')}</span>
           <input
             type="date"
             value={fromUnixSeconds(f.modifiedBefore)}
             onChange={(e) => patchFilter({ modifiedBefore: toUnixSeconds(e.target.value, true) })}
             disabled={disabled}
           />
-          <small className="hint">含当日 23:59:59</small>
+          <small className="hint">{t('filter.modHint')}</small>
         </label>
       </div>
 
       <div className="divider" />
 
       <label className="field">
-        <span>排除规则（glob 通配，逗号分隔）</span>
+        <span>{t('filter.glob')}</span>
         <input
           type="text"
           value={f.excludeGlobs.join(', ')}
@@ -143,18 +145,16 @@ export function FilterSettings({ options, patchFilter, disabled }: Props) {
                 .filter(Boolean),
             })
           }
-          placeholder="**/node_modules/**, **/Cache/**"
+          placeholder={t('filter.globPh')}
           disabled={disabled}
         />
-        <small className="hint">
-          匹配整条路径，命中即整个目录被剪枝（不再向下遍历），比扩展名过滤更省时间
-        </small>
+        <small className="hint">{t('filter.globHint')}</small>
       </label>
 
       <div className="divider" />
 
       <div className="field">
-        <span>文件属性</span>
+        <span>{t('filter.attrTitle')}</span>
         <label className="check">
           <input
             type="checkbox"
@@ -163,8 +163,8 @@ export function FilterSettings({ options, patchFilter, disabled }: Props) {
             disabled={disabled}
           />
           <span>
-            包含隐藏文件
-            <small>以「.」开头的文件与隐藏属性的文件</small>
+            {t('filter.includeHidden')}
+            <small>{t('filter.includeHiddenHint')}</small>
           </span>
         </label>
         <label className="check">
@@ -175,8 +175,8 @@ export function FilterSettings({ options, patchFilter, disabled }: Props) {
             disabled={disabled}
           />
           <span>
-            包含系统文件
-            <small>Thumbs.db / .DS_Store / 备份临时文件，默认跳过</small>
+            {t('filter.includeSystem')}
+            <small>{t('filter.includeSystemHint')}</small>
           </span>
         </label>
         <label className="check">
@@ -187,8 +187,8 @@ export function FilterSettings({ options, patchFilter, disabled }: Props) {
             disabled={disabled}
           />
           <span>
-            跟随符号链接
-            <small>默认关闭：开启后可能因链接成环而重复计数</small>
+            {t('filter.followSym')}
+            <small>{t('filter.followSymHint')}</small>
           </span>
         </label>
       </div>
@@ -197,7 +197,7 @@ export function FilterSettings({ options, patchFilter, disabled }: Props) {
         <div className="alert info" style={{ marginTop: 12 }}>
           <div className="row" style={{ gap: 6, marginBottom: 6 }}>
             <Icon name="filter" size={13} />
-            <span>当前生效的排除规则（{f.excludeGlobs.length} 条）</span>
+            <span>{t('filter.activeGlobs', { n: f.excludeGlobs.length })}</span>
           </div>
           <div className="chips">
             {f.excludeGlobs.map((g) => (

@@ -103,6 +103,15 @@ fileclean sessions    # 列出已保存会话
 
 主界面侧栏保留的那份**只读摘要**是有意为之：它把"会影响本次扫描结果"的规则（哈希算法、过滤条件、分组门槛、并发、缓存、保留策略条数与保底份数）压成一眼能看完的几行，再往下才是"调整扫描规则"的入口。这样改完规则回到主界面，不必凭记忆确认配置。
 
+### 界面语言与主题
+
+支持 **中文 / English** 双语界面，以及 **亮色 / 暗色 / 跟随系统** 三档主题，均在「扫描规则 → 外观」里设置：
+
+- **界面语言**：下拉切换，立即生效、无需重启；偏好存于 `localStorage` 的 `fileclean.lang`。
+- **界面主题**：亮色、暗色，或跟随系统（实时匹配操作系统的浅色 / 深色外观）；偏好存于 `fileclean.theme`，默认「跟随系统」。
+
+实现要点：`src/i18n/` 是轻量自建方案——`I18nProvider` + `useI18n()` + `t(key, vars?)`，以 `zh.ts` 为唯一真源，`en.ts` 用 `Record<DictKey, string>` 在编译期强制键完整，纯逻辑模块通过模块级单例直接调用 `t()`。主题由 `window.matchMedia('(prefers-color-scheme: dark)')` 驱动，作用于 `document.documentElement.dataset.theme`，暗色调色板在 `src/styles.css` 的 `[data-theme='dark']` 中覆盖。
+
 各视图在 1200 × 800 下的实际渲染见 `docs/screenshots/`（含设置页六个分区，以及 1000 × 660 最小尺寸的对照）。这些图由 `npm run preview:ui` + 无头浏览器按真实窗口尺寸截取，不是效果图。
 
 ---
